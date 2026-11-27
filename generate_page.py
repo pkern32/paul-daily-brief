@@ -45,8 +45,8 @@ ESPN_TEAM_CONFIG = {
         "league": "mlb",
         "espn_slug": "mlb",
         "espn_team_id": "9",
-        "team_url": "https://www.espn.com/mlb/team/_/name/min/minnesota-twins",
-        "schedule_url": "https://www.espn.com/mlb/team/schedule/_/name/min",
+        "team_url": "[https://www.espn.com/mlb/team/_/name/min/minnesota-twins](https://www.espn.com/mlb/team/_/name/min/minnesota-twins)",
+        "schedule_url": "[https://www.espn.com/mlb/team/schedule/_/name/min](https://www.espn.com/mlb/team/schedule/_/name/min)",
         "aliases": {"minnesota twins", "twins", "min"},
     },
     "Minnesota Vikings": {
@@ -54,8 +54,8 @@ ESPN_TEAM_CONFIG = {
         "league": "nfl",
         "espn_slug": "nfl",
         "espn_team_id": "16",
-        "team_url": "https://www.espn.com/nfl/team/_/name/min/minnesota-vikings",
-        "schedule_url": "https://www.espn.com/nfl/team/schedule/_/name/min",
+        "team_url": "[https://www.espn.com/nfl/team/_/name/min/minnesota-vikings](https://www.espn.com/nfl/team/_/name/min/minnesota-vikings)",
+        "schedule_url": "[https://www.espn.com/nfl/team/schedule/_/name/min](https://www.espn.com/nfl/team/schedule/_/name/min)",
         "aliases": {"minnesota vikings", "vikings", "min"},
     },
     "Minnesota Wild": {
@@ -63,8 +63,8 @@ ESPN_TEAM_CONFIG = {
         "league": "nhl",
         "espn_slug": "nhl",
         "espn_team_id": "30",
-        "team_url": "https://www.espn.com/nhl/team/_/name/min/minnesota-wild",
-        "schedule_url": "https://www.espn.com/nhl/team/schedule/_/name/min",
+        "team_url": "[https://www.espn.com/nhl/team/_/name/min/minnesota-wild](https://www.espn.com/nhl/team/_/name/min/minnesota-wild)",
+        "schedule_url": "[https://www.espn.com/nhl/team/schedule/_/name/min](https://www.espn.com/nhl/team/schedule/_/name/min)",
         "aliases": {"minnesota wild", "wild", "min"},
     },
     "Minnesota Timberwolves": {
@@ -72,17 +72,17 @@ ESPN_TEAM_CONFIG = {
         "league": "nba",
         "espn_slug": "nba",
         "espn_team_id": "16",
-        "team_url": "https://www.espn.com/nba/team/_/name/min/minnesota-timberwolves",
-        "schedule_url": "https://www.espn.com/nba/team/schedule/_/name/min",
+        "team_url": "[https://www.espn.com/nba/team/_/name/min/minnesota-timberwolves](https://www.espn.com/nba/team/_/name/min/minnesota-timberwolves)",
+        "schedule_url": "[https://www.espn.com/nba/team/schedule/_/name/min](https://www.espn.com/nba/team/schedule/_/name/min)",
         "aliases": {"minnesota timberwolves", "timberwolves", "wolves", "min"},
     },
 }
 
 ESPN_LEAGUE_FEEDS = [
-    ("football", "nfl", "https://www.espn.com/nfl/"),
-    ("basketball", "nba", "https://www.espn.com/nba/"),
-    ("hockey", "nhl", "https://www.espn.com/nhl/"),
-    ("baseball", "mlb", "https://www.espn.com/mlb/"),
+    ("football", "nfl", "[https://www.espn.com/nfl/](https://www.espn.com/nfl/)"),
+    ("basketball", "nba", "[https://www.espn.com/nba/](https://www.espn.com/nba/)"),
+    ("hockey", "nhl", "[https://www.espn.com/nhl/](https://www.espn.com/nhl/)"),
+    ("baseball", "mlb", "[https://www.espn.com/mlb/](https://www.espn.com/mlb/)"),
 ]
 
 
@@ -108,8 +108,8 @@ Use Google Search to find current, real-time information as of today.
 CRITICAL URL RULES:
 - Every URL MUST be copied verbatim from your Google Search grounding results. Never guess, construct, or shorten URLs.
 - Every URL must point directly to the specific article, box score, schedule, property listing, or event page—NEVER to a site homepage or generic section root.
-- For every item in "sports_news", "url" MUST be an ESPN.com URL (from www.espn.com) pointing to that specific ESPN sports story, and "source" MUST be "ESPN". Search specifically on espn.com for today's top sports headlines.
-- For every item in "single_family_homes" and "multifamily_homes", "url" MUST be a Zillow.com listing URL (from www.zillow.com, such as a /homedetails/ property page) found via Google Search on zillow.com. Search specifically on site:zillow.com for active listings in 45140 and nearby communities.
+- For every item in "sports_news", "url" MUST be an ESPN.com URL (from [www.espn.com](https://www.espn.com)) pointing to that specific ESPN sports story, and "source" MUST be "ESPN". Search specifically on espn.com for today's top sports headlines.
+- For every item in "single_family_homes" and "multifamily_homes", "url" MUST be a Zillow.com listing URL (from [www.zillow.com](https://www.zillow.com), such as a /homedetails/ property page) found via Google Search on zillow.com. Search specifically on site:zillow.com for active listings in 45140 and nearby communities.
 
 Return ONLY valid JSON matching this exact schema (no markdown fences, no extra text):
 {{
@@ -142,7 +142,7 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
       "headline_url": "https://...",
       "last_game_result": "Final Score (e.g., Vikings 24 - Bears 17) or Offseason note",
       "top_performers": "Key stat lines from last game",
-      "box_score_url": "https://www.espn.com/...",
+      "box_score_url": "[https://www.espn.com/](https://www.espn.com/)...",
       "next_game": "Opponent, Date, Time (ET)",
       "schedule_url": "https://..."
     }}
@@ -152,7 +152,7 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
       "headline": "ESPN Sports Headline",
       "source": "ESPN",
       "summary": "2-sentence objective summary of the ESPN sports story",
-      "url": "https://www.espn.com/..."
+      "url": "[https://www.espn.com/](https://www.espn.com/)..."
     }}
   ],
   "single_family_homes": [
@@ -163,7 +163,7 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
       "listing_status": "New Listing | Price Cut / Value Deal",
       "strategy": "Short-Term Rental (Airbnb) | Long-Term Rental | Value-Add",
       "metrics_pitch": "Beds/baths/sqft, days on market or recent price cut details, and rental/equity upside near Loveland bike trail, downtown, or commuter routes",
-      "url": "https://www.zillow.com/homedetails/..."
+      "url": "[https://www.zillow.com/homedetails/](https://www.zillow.com/homedetails/)..."
     }}
   ],
   "multifamily_homes": [
@@ -174,7 +174,7 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
       "listing_status": "New Listing | Price Cut / Value Deal",
       "strategy": "Duplex | Triplex | Quadplex | Small Apartment Building",
       "metrics_pitch": "Unit count, total beds/baths/sqft, days on market or price drop, and estimated gross rent/cap rate angle",
-      "url": "https://www.zillow.com/homedetails/..."
+      "url": "[https://www.zillow.com/homedetails/](https://www.zillow.com/homedetails/)..."
     }}
   ],
   "local_news": [
@@ -204,7 +204,7 @@ Strict Requirements:
 1. "events_this_month": 5 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in the remainder of {current_month} (on or after {today_str}) spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
 2. "events_next_month": 5 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in {next_month} spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
 3. "sports": Cover ONLY these 4 Minnesota pro teams: Minnesota Twins, Minnesota Vikings, Minnesota Wild, and Minnesota Timberwolves. Include each team's single top current news headline with source and direct article URL, plus ONLY final score and top performers for the most recent completed game, an ESPN.com box score URL ("box_score_url" on espn.com), and direct team schedule URL.
-4. "sports_news": Top 5 major sports headlines today sourced strictly from ESPN.com ("source": "ESPN", with direct "url" links on www.espn.com).
+4. "sports_news": Top 5 major sports headlines today sourced strictly from ESPN.com ("source": "ESPN", with direct "url" links on [www.espn.com](https://www.espn.com)).
 5. "single_family_homes": Exactly 3 active for-sale single-family homes on Zillow.com in 45140 (or immediately adjacent Loveland/Maineville/Milford) with a STRICT MAXIMUM asking price of $500,000. Focus specifically on brand-new listings OR older listings with recent price cuts / strong value-per-sqft deals suitable for STR (Airbnb) or LTR investment. Every "url" MUST be on zillow.com.
 6. "multifamily_homes": Exactly 3 active for-sale multifamily properties (duplex, triplex, quadplex, or small multifamily) on Zillow.com in 45140 or immediately adjacent Greater Cincinnati communities (e.g., Milford, Mason, Lebanon, Northeast Cincinnati) with a STRICT MAXIMUM asking price of $1,500,000. Focus specifically on brand-new listings OR older listings with recent price cuts / strong cashflow potential. Every "url" MUST be on zillow.com.
 7. "local_news": Top 5 local news stories near Loveland / Warren, Clermont, and Hamilton counties from neutral, fact-based outlets (e.g., Loveland Local News, WLWT, WVXU).
@@ -276,7 +276,7 @@ def resolve_zillow_property_url(address, candidate_url, grounding_urls):
             return u, True
 
     slug = slugify_address(address)
-    return f"https://www.zillow.com/homes/{slug}_rb/", True
+    return f"[https://www.zillow.com/homes/](https://www.zillow.com/homes/){slug}_rb/", True
 
 
 def extract_espn_article_url(article_obj):
@@ -292,7 +292,7 @@ def extract_espn_article_url(article_obj):
 
 
 def fetch_espn_news_items(sport, league, team_id=None, limit=15):
-    url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/news?limit={limit}"
+    url = f"[https://site.api.espn.com/apis/site/v2/sports/](https://site.api.espn.com/apis/site/v2/sports/){sport}/{league}/news?limit={limit}"
     if team_id:
         url += f"&team={urllib.parse.quote_plus(str(team_id))}"
     try:
@@ -353,7 +353,7 @@ def get_espn_top_sports_news(gemini_sports_news):
             resolved_url = best_espn_match(
                 f"{headline} {summary}",
                 available,
-                "https://www.espn.com/",
+                "[https://www.espn.com/](https://www.espn.com/)",
             )
 
         used_urls.add(resolved_url)
@@ -383,7 +383,7 @@ def get_espn_team_headline_url(team_name, headline_text, candidate_url=""):
     if candidate_url and is_espn_domain(candidate_url):
         return candidate_url.strip()
     if not cfg:
-        return "https://www.espn.com/"
+        return "[https://www.espn.com/](https://www.espn.com/)"
 
     team_articles = fetch_espn_news_items(
         cfg["sport"], cfg["league"], team_id=cfg["espn_team_id"], limit=8
@@ -401,7 +401,7 @@ def get_espn_team_headline_url(team_name, headline_text, candidate_url=""):
 def get_espn_box_score_url(team_name, candidate_url=""):
     cfg = ESPN_TEAM_CONFIG.get(str(team_name or "").strip())
     if not cfg:
-        return candidate_url if is_espn_domain(candidate_url) else "https://www.espn.com/"
+        return candidate_url if is_espn_domain(candidate_url) else "[https://www.espn.com/](https://www.espn.com/)"
 
     sport = cfg["sport"]
     league = cfg["league"]
@@ -411,7 +411,7 @@ def get_espn_box_score_url(team_name, candidate_url=""):
     now_et = datetime.now(ZoneInfo("America/New_York"))
     for days_ago in range(0, 11):
         date_str = (now_et - timedelta(days=days_ago)).strftime("%Y%m%d")
-        api_url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboard?dates={date_str}"
+        api_url = f"[https://site.api.espn.com/apis/site/v2/sports/](https://site.api.espn.com/apis/site/v2/sports/){sport}/{league}/scoreboard?dates={date_str}"
         try:
             resp = requests.get(api_url, headers=HEADERS, timeout=6)
             if resp.status_code != 200:
@@ -441,7 +441,7 @@ def get_espn_box_score_url(team_name, candidate_url=""):
                         team_matched = True
                         break
                 if team_matched and status_type:
-                    return f"https://www.espn.com/{espn_slug}/boxscore/_/gameId/{event_id}"
+                    return f"[https://www.espn.com/](https://www.espn.com/){espn_slug}/boxscore/_/gameId/{event_id}"
         except Exception:
             continue
 
@@ -454,13 +454,13 @@ def get_espn_box_score_url(team_name, candidate_url=""):
 def get_espn_schedule_url(team_name, candidate_url=""):
     cfg = ESPN_TEAM_CONFIG.get(str(team_name or "").strip())
     if not cfg:
-        return candidate_url if is_espn_domain(candidate_url) else "https://www.espn.com/"
+        return candidate_url if is_espn_domain(candidate_url) else "[https://www.espn.com/](https://www.espn.com/)"
 
     if candidate_url and is_espn_domain(candidate_url):
         return candidate_url.strip()
 
     sched_api = (
-        f"https://site.api.espn.com/apis/site/v2/sports/"
+        f"[https://site.api.espn.com/apis/site/v2/sports/](https://site.api.espn.com/apis/site/v2/sports/)"
         f"{cfg['sport']}/{cfg['league']}/teams/{cfg['espn_team_id']}/schedule"
     )
     try:
@@ -487,9 +487,9 @@ def get_espn_schedule_url(team_name, candidate_url=""):
 def verify_link(url, reference_text, grounding_urls, require_espn=False):
     fallback_query = urllib.parse.quote_plus(str(reference_text or "news").strip())
     fallback_url = (
-        "https://www.espn.com/"
+        "[https://www.espn.com/](https://www.espn.com/)"
         if require_espn
-        else f"https://www.google.com/search?q={fallback_query}"
+        else f"[https://www.google.com/search?q=](https://www.google.com/search?q=){fallback_query}"
     )
 
     if not url or not isinstance(url, str) or not url.startswith(("http://", "https://")):
@@ -528,178 +528,4 @@ def verify_link(url, reference_text, grounding_urls, require_espn=False):
         keywords = extract_keywords(reference_text)
         if keywords:
             matches = sum(1 for kw in keywords if kw in page_text)
-            match_ratio = matches / len(keywords)
-            if matches == 0 or (not is_grounded and match_ratio < 0.25):
-                return fallback_url, False
-
-        return final_url, True
-
-    except requests.RequestException:
-        if is_grounded:
-            return clean_url, True
-        return fallback_url, False
-
-
-def parse_price_number(val):
-    cleaned = re.sub(r"[^\d.]", "", str(val or ""))
-    try:
-        return float(cleaned) if cleaned else 0.0
-    except ValueError:
-        return 0.0
-
-
-def estimate_monthly_tax(listing, price):
-    actual_annual_tax = parse_price_number(listing.get("annual_tax_paid"))
-    if actual_annual_tax > 0:
-        return actual_annual_tax / 12.0, True
-
-    pitch = str(listing.get("metrics_pitch") or "").lower()
-    address = str(listing.get("address") or "").lower()
-    combined = f"{address} {pitch}"
-
-    if "warren" in combined or "lebanon" in combined or "mason" in combined:
-        est_rate = 0.0122
-    elif "clermont" in combined or "milford" in combined:
-        est_rate = 0.0145
-    else:
-        est_rate = 0.0165
-
-    return (price * est_rate) / 12.0, False
-
-
-def estimate_monthly_cash_flow(listing, is_multifamily=False, down_payment_pct=0.20, annual_rate=0.073):
-    price = parse_price_number(listing.get("price"))
-    if price <= 0:
-        return "Est. Cash Flow: N/A"
-
-    pitch = str(listing.get("metrics_pitch") or "").lower()
-    strategy = str(listing.get("strategy") or "").lower()
-
-    if is_multifamily:
-        unit_match = re.search(r"(\d+)\s*-?\s*unit", pitch)
-        units = int(unit_match.group(1)) if unit_match else (
-            4 if "quadplex" in strategy else 3 if "triplex" in strategy else 2
-        )
-        per_unit_rent = 1650.0 if units == 2 else 1550.0
-        gross_rent = units * per_unit_rent
-        vacancy_rate = 0.06
-        non_tax_opex_rate = 0.24
-    else:
-        bed_match = re.search(r"(\d+)\s*(?:bd|bed|br)", pitch)
-        beds = int(bed_match.group(1)) if bed_match else 3
-        base_ltr = 1850.0 if beds <= 2 else (2160.0 if beds == 3 else 2750.0)
-        if "short-term" in strategy or "airbnb" in strategy or "str" in pitch:
-            gross_rent = base_ltr * 1.45
-            vacancy_rate = 0.15
-            non_tax_opex_rate = 0.28
-        else:
-            gross_rent = base_ltr
-            vacancy_rate = 0.05
-            non_tax_opex_rate = 0.22
-
-    monthly_tax, is_actual_tax = estimate_monthly_tax(listing, price)
-    effective_rent = gross_rent * (1.0 - vacancy_rate)
-    other_opex = gross_rent * non_tax_opex_rate
-
-    loan_amount = price * (1.0 - down_payment_pct)
-    monthly_rate = annual_rate / 12.0
-    n_payments = 360
-    if monthly_rate > 0:
-        pi = loan_amount * (monthly_rate * (1 + monthly_rate) ** n_payments) / (
-            (1 + monthly_rate) ** n_payments - 1
-        )
-    else:
-        pi = loan_amount / n_payments
-
-    cash_flow = effective_rent - monthly_tax - other_opex - pi
-    sign = "+" if cash_flow >= 0 else "-"
-    tax_label = f"Actual Tax ${round(monthly_tax):,}/mo" if is_actual_tax else f"Est. Tax ${round(monthly_tax):,}/mo"
-    return f"Est. Cash Flow: {sign}${abs(round(cash_flow)):,}/mo ({tax_label})"
-
-
-def validate_digest_links(data, grounding_urls):
-    for key in ("events_this_month", "events_next_month"):
-        for e in data.get(key, []):
-            ref = f"{e.get('title', '')} {e.get('location', '')}"
-            e["url"], e["url_verified"] = verify_link(e.get("url"), ref, grounding_urls)
-
-    for s in data.get("sports", []):
-        team = s.get("team", "")
-        raw_headline_url = s.get("headline_url", "")
-        if is_espn_domain(raw_headline_url):
-            s["headline_url"] = get_espn_team_headline_url(
-                team, s.get("top_headline", ""), raw_headline_url
-            )
-            s["headline_verified"] = is_espn_domain(s["headline_url"])
-        else:
-            verified_hl, ok_hl = verify_link(
-                raw_headline_url, f"{team} {s.get('top_headline', '')}", grounding_urls
-            )
-            if ok_hl:
-                s["headline_url"] = verified_hl
-                s["headline_verified"] = True
-            else:
-                s["headline_url"] = get_espn_team_headline_url(
-                    team, s.get("top_headline", ""), ""
-                )
-                s["headline_verified"] = is_espn_domain(s["headline_url"])
-
-        direct_box = get_espn_box_score_url(team, s.get("box_score_url", ""))
-        s["box_score_url"] = direct_box
-        s["box_verified"] = is_espn_domain(direct_box)
-
-        direct_sched = get_espn_schedule_url(team, s.get("schedule_url", ""))
-        s["schedule_url"] = direct_sched
-        s["schedule_verified"] = is_espn_domain(direct_sched)
-
-    data["sports_news"] = get_espn_top_sports_news(data.get("sports_news", []))
-
-    for prop_key in ("single_family_homes", "multifamily_homes"):
-        for r in data.get(prop_key, []):
-            r["url"], r["url_verified"] = resolve_zillow_property_url(
-                r.get("address", ""), r.get("url", ""), grounding_urls
-            )
-
-    for n in data.get("local_news", []):
-        n["url"], n["url_verified"] = verify_link(
-            n.get("url"), f"{n.get('headline', '')} {n.get('source', '')}", grounding_urls
-        )
-
-    for n in data.get("national_news", []):
-        n["url"], n["url_verified"] = verify_link(
-            n.get("url"), f"{n.get('headline', '')} {n.get('source', '')}", grounding_urls
-        )
-
-    q = data.get("quote", {})
-    if q:
-        q["source_url"], q["url_verified"] = verify_link(
-            q.get("source_url"), f"{q.get('author', '')} quote", grounding_urls
-        )
-
-    return data
-
-
-def fetch_digest():
-    response = client.models.generate_content(
-        model="gemini-3.8-flash",
-        contents=build_prompt(),
-        config=types.GenerateContentConfig(
-            tools=[{"google_search": {}}],
-            thinking_config=types.ThinkingConfig(thinking_level="medium"),
-        ),
-    )
-
-    grounding_urls = set()
-    try:
-        for candidate in response.candidates or []:
-            meta = getattr(candidate, "grounding_metadata", None)
-            for chunk in getattr(meta, "grounding_chunks", []) or []:
-                web = getattr(chunk, "web", None)
-                if web and getattr(web, "uri", None):
-                    grounding_urls.add(web.uri.strip())
-    except Exception:
-        pass
-
-    raw_text = (response.text or "").strip()
-    if raw_text.startswith("```"):
-        raw_text = raw_text.
+            match_ratio =
