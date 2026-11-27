@@ -292,3 +292,414 @@ def extract_espn_article_url(article_obj):
 
 
 def fetch_espn_news_items(sport, league, team_id=None, limit=15):
+    url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/news?limit={limit}"
+    if team_id:
+        url += f"&team={urllib.parse.quote_plus(str(team_id))}"
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=6)
+        if resp.status_code != 200:
+            return []
+        payload = resp.json()
+        items = []
+        for art in payload.get("articles", []):
+            art_url = extract_espn_article_url(art)
+            if art_url:
+                items.append({
+                    "headline": str(art.get("headline") or "").strip(),
+                    "description": str(art.get("description") or "").strip(),
+                    "url": art_url,
+                })
+        return items
+    except Exception:
+        return []
+
+
+def best_espn_match(query_text, candidates, fallback_url):
+    if not candidates:
+        return fallback_url
+    q_words = set(extract_keywords(query_text))
+    if not q_words:
+        return candidates[0]["url"]
+
+    best_url = fallback_url
+    best_score = 0
+    for item in candidates:
+        haystack = f"{item.get('headline', '')} {item.get('description', '')}".lower()
+        score = sum(1 for w in q_words if w in haystack)
+        if score > best_score:
+            best_score = score
+            best_url = item["url"]
+
+    return best_url if best_score > 0 else candidates[0]["url"]
+
+
+def get_espn_top_sports_news(gemini_sports_news):
+    pool = []
+    for sport, league, _ in ESPN_LEAGUE_FEEDS:
+        pool.extend(fetch_espn_news_items(sport, league, limit=6))
+
+    results = []
+    used_urls = set()
+
+    for item in (gemini_sports_news or [])[:5]:
+        headline = str(item.get("headline") or "").strip()
+        summary = str(item.get("summary") or "").strip()
+        cand = str(item.get("url") or "").strip()
+
+        if cand and is_espn_domain(cand) and cand not in used_urls:
+            resolved_url = cand
+        else:
+            available = [p for p in pool if p["url"] not in used_urls] or pool
+            resolved_url = best_espn_match(
+                f"{headline} {summary}",
+                available,
+                "https://www.espn.com/",
+            )
+
+        used_urls.add(resolved_url)
+        results.append({
+            "headline": headline or "ESPN Top Sports Story",
+            "source": "ESPN",
+            "summary": summary,
+            "url": resolved_url,
+            "url_verified": is_espn_domain(resolved_url),
+        })
+
+    if not results and pool:
+        for p in pool[:5]:
+            results.append({
+                "headline": p["headline"],
+                "source": "ESPN",
+                "summary": p["description"],
+                "url": p["url"],
+                "url_verified": True,
+            })
+
+    return results
+
+
+def get_espn_team_headline_url(team_name, headline_text, candidate_url=""):
+    cfg = ESPN_TEAM_CONFIG.get(str(team_name or "").strip())
+    if candidate_url and is_espn_domain(candidate_url):
+        return candidate_url.strip()
+    if not cfg:
+        return "https://www.espn.com/"
+
+    team_articles = fetch_espn_news_items(
+        cfg["sport"], cfg["league"], team_id=cfg["espn_team_id"], limit=8
+    )
+    if not team_articles:
+        team_articles = fetch_espn_news_items(cfg["sport"], cfg["league"], limit=12)
+
+    return best_espn_match(
+        f"{team_name} {headline_text}",
+        team_articles,
+        cfg["team_url"],
+    )
+
+
+def get_espn_box_score_url(team_name, candidate_url=""):
+    cfg = ESPN_TEAM_CONFIG.get(str(team_name or "").strip())
+    if not cfg:
+        return candidate_url if is_espn_domain(candidate_url) else "https://www.espn.com/"
+
+    sport = cfg["sport"]
+    league = cfg["league"]
+    espn_slug = cfg["espn_slug"]
+    aliases = cfg["aliases"]
+
+    now_et = datetime.now(ZoneInfo("America/New_York"))
+    for days_ago in range(0, 11):
+        date_str = (now_et - timedelta(days=days_ago)).strftime("%Y%m%d")
+        api_url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboard?dates={date_str}"
+        try:
+            resp = requests.get(api_url, headers=HEADERS, timeout=6)
+            if resp.status_code != 200:
+                continue
+            payload = resp.json()
+            for event in payload.get("events", []):
+                event_id = str(event.get("id") or "").strip()
+                if not event_id:
+                    continue
+                status_type = (
+                    event.get("status", {})
+                    .get("type", {})
+                    .get("completed", False)
+                )
+                competitions = event.get("competitions", [])
+                competitors = competitions[0].get("competitors", []) if competitions else []
+                team_matched = False
+                for comp in competitors:
+                    t_info = comp.get("team", {})
+                    names = {
+                        str(t_info.get("displayName") or "").lower(),
+                        str(t_info.get("shortDisplayName") or "").lower(),
+                        str(t_info.get("name") or "").lower(),
+                        str(t_info.get("abbreviation") or "").lower(),
+                    }
+                    if names & aliases:
+                        team_matched = True
+                        break
+                if team_matched and status_type:
+                    return f"https://www.espn.com/{espn_slug}/boxscore/_/gameId/{event_id}"
+        except Exception:
+            continue
+
+    if candidate_url and is_espn_domain(candidate_url) and ("boxscore" in candidate_url or "gameId" in candidate_url or "/game/" in candidate_url):
+        return candidate_url.strip()
+
+    return cfg["team_url"]
+
+
+def get_espn_schedule_url(team_name, candidate_url=""):
+    cfg = ESPN_TEAM_CONFIG.get(str(team_name or "").strip())
+    if not cfg:
+        return candidate_url if is_espn_domain(candidate_url) else "https://www.espn.com/"
+
+    if candidate_url and is_espn_domain(candidate_url):
+        return candidate_url.strip()
+
+    sched_api = (
+        f"https://site.api.espn.com/apis/site/v2/sports/"
+        f"{cfg['sport']}/{cfg['league']}/teams/{cfg['espn_team_id']}/schedule"
+    )
+    try:
+        resp = requests.get(sched_api, headers=HEADERS, timeout=6)
+        if resp.status_code == 200:
+            payload = resp.json()
+            for ev in payload.get("events", []):
+                completed = (
+                    ev.get("status", {})
+                    .get("type", {})
+                    .get("completed", False)
+                )
+                if not completed:
+                    for link in ev.get("links", []):
+                        href = link.get("href")
+                        if href and is_espn_domain(href):
+                            return str(href).strip()
+    except Exception:
+        pass
+
+    return cfg["schedule_url"]
+
+
+def verify_link(url, reference_text, grounding_urls, require_espn=False):
+    fallback_query = urllib.parse.quote_plus(str(reference_text or "news").strip())
+    fallback_url = (
+        "https://www.espn.com/"
+        if require_espn
+        else f"https://www.google.com/search?q={fallback_query}"
+    )
+
+    if not url or not isinstance(url, str) or not url.startswith(("http://", "https://")):
+        return fallback_url, False
+
+    clean_url = url.strip()
+    if require_espn and not is_espn_domain(clean_url):
+        return fallback_url, False
+
+    is_grounded = clean_url in grounding_urls
+
+    try:
+        resp = requests.get(clean_url, headers=HEADERS, timeout=8, allow_redirects=True)
+        final_url = resp.url
+
+        if require_espn and not is_espn_domain(final_url):
+            return fallback_url, False
+
+        if resp.status_code in (404, 410, 451) or resp.status_code >= 500:
+            return fallback_url, False
+
+        if resp.status_code == 403:
+            return (clean_url, True) if is_grounded else (fallback_url, False)
+
+        page_text = resp.text[:150000].lower()
+        soft_404_phrases = [
+            "page not found",
+            "404 not found",
+            "article could not be found",
+            "listing is no longer available",
+            "off market"
+        ]
+        if any(phrase in page_text for phrase in soft_404_phrases):
+            return fallback_url, False
+
+        keywords = extract_keywords(reference_text)
+        if keywords:
+            matches = sum(1 for kw in keywords if kw in page_text)
+            match_ratio = matches / len(keywords)
+            if matches == 0 or (not is_grounded and match_ratio < 0.25):
+                return fallback_url, False
+
+        return final_url, True
+
+    except requests.RequestException:
+        if is_grounded:
+            return clean_url, True
+        return fallback_url, False
+
+
+def parse_price_number(val):
+    cleaned = re.sub(r"[^\d.]", "", str(val or ""))
+    try:
+        return float(cleaned) if cleaned else 0.0
+    except ValueError:
+        return 0.0
+
+
+def estimate_monthly_tax(listing, price):
+    actual_annual_tax = parse_price_number(listing.get("annual_tax_paid"))
+    if actual_annual_tax > 0:
+        return actual_annual_tax / 12.0, True
+
+    pitch = str(listing.get("metrics_pitch") or "").lower()
+    address = str(listing.get("address") or "").lower()
+    combined = f"{address} {pitch}"
+
+    if "warren" in combined or "lebanon" in combined or "mason" in combined:
+        est_rate = 0.0122
+    elif "clermont" in combined or "milford" in combined:
+        est_rate = 0.0145
+    else:
+        est_rate = 0.0165
+
+    return (price * est_rate) / 12.0, False
+
+
+def estimate_monthly_cash_flow(listing, is_multifamily=False, down_payment_pct=0.20, annual_rate=0.073):
+    price = parse_price_number(listing.get("price"))
+    if price <= 0:
+        return "Est. Cash Flow: N/A"
+
+    pitch = str(listing.get("metrics_pitch") or "").lower()
+    strategy = str(listing.get("strategy") or "").lower()
+
+    if is_multifamily:
+        unit_match = re.search(r"(\d+)\s*-?\s*unit", pitch)
+        units = int(unit_match.group(1)) if unit_match else (
+            4 if "quadplex" in strategy else 3 if "triplex" in strategy else 2
+        )
+        per_unit_rent = 1650.0 if units == 2 else 1550.0
+        gross_rent = units * per_unit_rent
+        vacancy_rate = 0.06
+        non_tax_opex_rate = 0.24
+    else:
+        bed_match = re.search(r"(\d+)\s*(?:bd|bed|br)", pitch)
+        beds = int(bed_match.group(1)) if bed_match else 3
+        base_ltr = 1850.0 if beds <= 2 else (2160.0 if beds == 3 else 2750.0)
+        if "short-term" in strategy or "airbnb" in strategy or "str" in pitch:
+            gross_rent = base_ltr * 1.45
+            vacancy_rate = 0.15
+            non_tax_opex_rate = 0.28
+        else:
+            gross_rent = base_ltr
+            vacancy_rate = 0.05
+            non_tax_opex_rate = 0.22
+
+    monthly_tax, is_actual_tax = estimate_monthly_tax(listing, price)
+    effective_rent = gross_rent * (1.0 - vacancy_rate)
+    other_opex = gross_rent * non_tax_opex_rate
+
+    loan_amount = price * (1.0 - down_payment_pct)
+    monthly_rate = annual_rate / 12.0
+    n_payments = 360
+    if monthly_rate > 0:
+        pi = loan_amount * (monthly_rate * (1 + monthly_rate) ** n_payments) / (
+            (1 + monthly_rate) ** n_payments - 1
+        )
+    else:
+        pi = loan_amount / n_payments
+
+    cash_flow = effective_rent - monthly_tax - other_opex - pi
+    sign = "+" if cash_flow >= 0 else "-"
+    tax_label = f"Actual Tax ${round(monthly_tax):,}/mo" if is_actual_tax else f"Est. Tax ${round(monthly_tax):,}/mo"
+    return f"Est. Cash Flow: {sign}${abs(round(cash_flow)):,}/mo ({tax_label})"
+
+
+def validate_digest_links(data, grounding_urls):
+    for key in ("events_this_month", "events_next_month"):
+        for e in data.get(key, []):
+            ref = f"{e.get('title', '')} {e.get('location', '')}"
+            e["url"], e["url_verified"] = verify_link(e.get("url"), ref, grounding_urls)
+
+    for s in data.get("sports", []):
+        team = s.get("team", "")
+        raw_headline_url = s.get("headline_url", "")
+        if is_espn_domain(raw_headline_url):
+            s["headline_url"] = get_espn_team_headline_url(
+                team, s.get("top_headline", ""), raw_headline_url
+            )
+            s["headline_verified"] = is_espn_domain(s["headline_url"])
+        else:
+            verified_hl, ok_hl = verify_link(
+                raw_headline_url, f"{team} {s.get('top_headline', '')}", grounding_urls
+            )
+            if ok_hl:
+                s["headline_url"] = verified_hl
+                s["headline_verified"] = True
+            else:
+                s["headline_url"] = get_espn_team_headline_url(
+                    team, s.get("top_headline", ""), ""
+                )
+                s["headline_verified"] = is_espn_domain(s["headline_url"])
+
+        direct_box = get_espn_box_score_url(team, s.get("box_score_url", ""))
+        s["box_score_url"] = direct_box
+        s["box_verified"] = is_espn_domain(direct_box)
+
+        direct_sched = get_espn_schedule_url(team, s.get("schedule_url", ""))
+        s["schedule_url"] = direct_sched
+        s["schedule_verified"] = is_espn_domain(direct_sched)
+
+    data["sports_news"] = get_espn_top_sports_news(data.get("sports_news", []))
+
+    for prop_key in ("single_family_homes", "multifamily_homes"):
+        for r in data.get(prop_key, []):
+            r["url"], r["url_verified"] = resolve_zillow_property_url(
+                r.get("address", ""), r.get("url", ""), grounding_urls
+            )
+
+    for n in data.get("local_news", []):
+        n["url"], n["url_verified"] = verify_link(
+            n.get("url"), f"{n.get('headline', '')} {n.get('source', '')}", grounding_urls
+        )
+
+    for n in data.get("national_news", []):
+        n["url"], n["url_verified"] = verify_link(
+            n.get("url"), f"{n.get('headline', '')} {n.get('source', '')}", grounding_urls
+        )
+
+    q = data.get("quote", {})
+    if q:
+        q["source_url"], q["url_verified"] = verify_link(
+            q.get("source_url"), f"{q.get('author', '')} quote", grounding_urls
+        )
+
+    return data
+
+
+def fetch_digest():
+    response = client.models.generate_content(
+        model="gemini-3.8-flash",
+        contents=build_prompt(),
+        config=types.GenerateContentConfig(
+            tools=[{"google_search": {}}],
+            thinking_config=types.ThinkingConfig(thinking_level="medium"),
+        ),
+    )
+
+    grounding_urls = set()
+    try:
+        for candidate in response.candidates or []:
+            meta = getattr(candidate, "grounding_metadata", None)
+            for chunk in getattr(meta, "grounding_chunks", []) or []:
+                web = getattr(chunk, "web", None)
+                if web and getattr(web, "uri", None):
+                    grounding_urls.add(web.uri.strip())
+    except Exception:
+        pass
+
+    raw_text = (response.text or "").strip()
+    if raw_text.startswith("```"):
+        raw_text = raw_text.
