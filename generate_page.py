@@ -35,6 +35,8 @@ Use Google Search to find current, real-time information as of today.
 CRITICAL URL RULES:
 - Every URL MUST be copied verbatim from your Google Search grounding results. Never guess, construct, or shorten URLs.
 - Every URL must point directly to the specific article, box score, schedule, property listing, or event page—NEVER to a site homepage or generic section root.
+- For every item in "sports", "box_score_url" MUST be an ESPN.com URL (from www.espn.com) pointing to that game's box score or game summary on ESPN.com. Search specifically on espn.com for each team's most recent completed game box score.
+- For every item in "sports_news", "url" MUST be an ESPN.com URL (from www.espn.com) pointing to that specific ESPN sports story, and "source" MUST be "ESPN". Search specifically on espn.com for today's top sports headlines.
 
 Return ONLY valid JSON matching this exact schema (no markdown fences, no extra text):
 {{
@@ -67,17 +69,17 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
       "headline_url": "https://...",
       "last_game_result": "Final Score (e.g., Vikings 24 - Bears 17) or Offseason note",
       "top_performers": "Key stat lines from last game",
-      "box_score_url": "https://...",
+      "box_score_url": "https://www.espn.com/...",
       "next_game": "Opponent, Date, Time (ET)",
       "schedule_url": "https://..."
     }}
   ],
   "sports_news": [
     {{
-      "headline": "Major Sports Headline",
-      "source": "Reputable sports outlet (e.g., ESPN, Associated Press, The Athletic, CBS Sports)",
-      "summary": "2-sentence objective summary of the sports story",
-      "url": "https://..."
+      "headline": "ESPN Sports Headline",
+      "source": "ESPN",
+      "summary": "2-sentence objective summary of the ESPN sports story",
+      "url": "https://www.espn.com/..."
     }}
   ],
   "single_family_homes": [
@@ -126,8 +128,8 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
 Strict Requirements:
 1. "events_this_month": 5 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in the remainder of {current_month} (on or after {today_str}) spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
 2. "events_next_month": 5 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in {next_month} spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
-3. "sports": Cover ONLY these 4 Minnesota pro teams: Minnesota Twins, Minnesota Vikings, Minnesota Wild, and Minnesota Timberwolves. Include each team's single top current news headline with source and direct article URL, plus ONLY final score and top performers for the most recent completed game, direct box score URL, and direct team schedule URL.
-4. "sports_news": Top 5 major US/global sports headlines today from reputable, fact-based sports outlets (e.g., Associated Press Sports, ESPN, CBS Sports, Yahoo Sports).
+3. "sports": Cover ONLY these 4 Minnesota pro teams: Minnesota Twins, Minnesota Vikings, Minnesota Wild, and Minnesota Timberwolves. Include each team's single top current news headline with source and direct article URL, plus ONLY final score and top performers for the most recent completed game, an ESPN.com box score URL ("box_score_url" on espn.com), and direct team schedule URL.
+4. "sports_news": Top 5 major sports headlines today sourced strictly from ESPN.com ("source": "ESPN", with direct "url" links on www.espn.com).
 5. "single_family_homes": Exactly 3 active for-sale single-family homes in 45140 (or immediately adjacent Loveland/Maineville/Milford) with a STRICT MAXIMUM asking price of $500,000. Focus specifically on brand-new listings OR older listings with recent price cuts / strong value-per-sqft deals suitable for STR (Airbnb) or LTR investment.
 6. "multifamily_homes": Exactly 3 active for-sale multifamily properties (duplex, triplex, quadplex, or small multifamily) in 45140 or immediately adjacent Greater Cincinnati communities (e.g., Milford, Mason, Lebanon, Northeast Cincinnati) with a STRICT MAXIMUM asking price of $1,500,000. Focus specifically on brand-new listings OR older listings with recent price cuts / strong cashflow potential.
 7. "local_news": Top 5 local news stories near Loveland / Warren, Clermont, and Hamilton counties from neutral, fact-based outlets (e.g., Loveland Local News, WLWT, WVXU).
@@ -157,26 +159,41 @@ def extract_keywords(text):
     return [w for w in words if w not in STOPWORDS]
 
 
-def verify_link(url, reference_text, grounding_urls):
+def is_espn_domain(url):
+    try:
+        host = urllib.parse.urlparse(url).netloc.lower()
+        return host == "espn.com" or host.endswith(".espn.com")
+    except Exception:
+        return False
+
+
+def verify_link(url, reference_text, grounding_urls, require_espn=False):
     """
     Verifies that a URL:
-    1. Is a valid HTTP(S) URL.
+    1. Is a valid HTTP(S) URL (and on espn.com when require_espn=True).
     2. Resolves without 404/410/5xx errors or soft-404 pages.
     3. Matches the referenced story/topic (either in Gemini grounding chunks or page text).
     Returns (verified_url, is_verified_direct).
     """
-    fallback_query = urllib.parse.quote_plus(str(reference_text or "news"))
+    search_prefix = "site:espn.com " if require_espn else ""
+    fallback_query = urllib.parse.quote_plus(f"{search_prefix}{str(reference_text or 'news')}".strip())
     fallback_url = f"https://www.google.com/search?q={fallback_query}"
 
     if not url or not isinstance(url, str) or not url.startswith(("http://", "https://")):
         return fallback_url, False
 
     clean_url = url.strip()
+    if require_espn and not is_espn_domain(clean_url):
+        return fallback_url, False
+
     is_grounded = clean_url in grounding_urls
 
     try:
         resp = requests.get(clean_url, headers=HEADERS, timeout=8, allow_redirects=True)
         final_url = resp.url
+
+        if require_espn and not is_espn_domain(final_url):
+            return fallback_url, False
 
         if resp.status_code in (404, 410, 451) or resp.status_code >= 500:
             return fallback_url, False
@@ -223,15 +240,22 @@ def validate_digest_links(data, grounding_urls):
             s.get("headline_url"), f"{team} {s.get('top_headline', '')}", grounding_urls
         )
         s["box_score_url"], s["box_verified"] = verify_link(
-            s.get("box_score_url"), f"{team} box score {s.get('last_game_result', '')}", grounding_urls
+            s.get("box_score_url"),
+            f"{team} box score {s.get('last_game_result', '')}",
+            grounding_urls,
+            require_espn=True,
         )
         s["schedule_url"], s["schedule_verified"] = verify_link(
             s.get("schedule_url"), f"{team} schedule", grounding_urls
         )
 
     for sn in data.get("sports_news", []):
+        sn["source"] = "ESPN"
         sn["url"], sn["url_verified"] = verify_link(
-            sn.get("url"), f"{sn.get('headline', '')} {sn.get('source', '')}", grounding_urls
+            sn.get("url"),
+            f"{sn.get('headline', '')} ESPN",
+            grounding_urls,
+            require_espn=True,
         )
 
     for r in data.get("single_family_homes", []):
@@ -303,30 +327,32 @@ def link_tag(url, label, verified=True):
     return f'<a href="{esc(url)}" target="_blank" rel="noopener">{label}</a>{suffix}'
 
 
-def render_property_cards(listings):
+def render_property_list(listings):
     return "".join(f"""
-        <div class="card">
+        <li class="list-item">
             <div class="row-between">
-                <h3>{link_tag(r.get('url'), esc(r.get('address')), r.get('url_verified', True))}</h3>
+                <strong>{link_tag(r.get('url'), esc(r.get('address')), r.get('url_verified', True))}</strong>
                 <span class="price">{esc(r.get('price'))}</span>
             </div>
-            <div style="margin-top: 6px;">
+            <div class="meta-line">
                 <span class="badge deal-badge">{esc(r.get('listing_status'))}</span>
                 <span class="badge">{esc(r.get('strategy'))}</span>
             </div>
-            <p style="margin-top:10px;">{esc(r.get('metrics_pitch'))}</p>
-        </div>
+            <p>{esc(r.get('metrics_pitch'))}</p>
+        </li>
     """ for r in listings)
 
 
-def render_event_cards(events):
+def render_event_list(events):
     return "".join(f"""
-        <div class="card">
-            <span class="badge">{esc(e.get('category'))}</span>
-            <h3>{link_tag(e.get('url'), esc(e.get('title')), e.get('url_verified', True))}</h3>
+        <li class="list-item">
+            <div class="row-between">
+                <strong>{link_tag(e.get('url'), esc(e.get('title')), e.get('url_verified', True))}</strong>
+                <span class="badge">{esc(e.get('category'))}</span>
+            </div>
             <p class="meta">📅 {esc(e.get('date_time'))} &nbsp;|&nbsp; 📍 {esc(e.get('location'))}</p>
             <p>{esc(e.get('why_it_fits'))}</p>
-        </div>
+        </li>
     """ for e in events)
 
 
@@ -334,38 +360,38 @@ def build_html(data):
     now_et = datetime.now(ZoneInfo("America/New_York")).strftime("%A, %B %d, %Y at %I:%M %p %Z")
     _, current_month, next_month = get_month_labels()
 
-    events_this_html = render_event_cards(data.get("events_this_month", []))
-    events_next_html = render_event_cards(data.get("events_next_month", []))
+    events_this_html = render_event_list(data.get("events_this_month", []))
+    events_next_html = render_event_list(data.get("events_next_month", []))
 
     sports_html = "".join(f"""
-        <div class="card">
+        <li class="list-item">
             <div class="row-between">
-                <h3>{esc(s.get('team'))}</h3>
+                <strong>{esc(s.get('team'))}</strong>
                 <span class="badge">{esc(s.get('status'))}</span>
             </div>
-            <div class="team-headline">
+            <p class="team-headline">
                 <strong>Top Headline:</strong> {link_tag(s.get('headline_url'), esc(s.get('top_headline')), s.get('headline_verified', True))}
                 <span class="source">({esc(s.get('headline_source'))})</span>
-            </div>
-            <p><strong>Final:</strong> {esc(s.get('last_game_result'))} &mdash; {link_tag(s.get('box_score_url'), 'Box Score &rarr;', s.get('box_verified', True))}</p>
+            </p>
+            <p><strong>Final:</strong> {esc(s.get('last_game_result'))} &mdash; {link_tag(s.get('box_score_url'), 'ESPN Box Score &rarr;', s.get('box_verified', True))}</p>
             <p><strong>Top Performers:</strong> {esc(s.get('top_performers'))}</p>
             <p class="meta"><strong>Next Game:</strong> {esc(s.get('next_game'))} &bull; {link_tag(s.get('schedule_url'), 'Schedule', s.get('schedule_verified', True))}</p>
-        </div>
+        </li>
     """ for s in data.get("sports", []))
 
     sports_news_html = "".join(f"""
-        <li>
+        <li class="list-item">
             <strong>{link_tag(sn.get('url'), esc(sn.get('headline')), sn.get('url_verified', True))}</strong>
             <span class="source">({esc(sn.get('source'))})</span>
             <p>{esc(sn.get('summary'))}</p>
         </li>
     """ for sn in data.get("sports_news", []))
 
-    sfh_html = render_property_cards(data.get("single_family_homes", []))
-    mfh_html = render_property_cards(data.get("multifamily_homes", []))
+    sfh_html = render_property_list(data.get("single_family_homes", []))
+    mfh_html = render_property_list(data.get("multifamily_homes", []))
 
     local_html = "".join(f"""
-        <li>
+        <li class="list-item">
             <strong>{link_tag(n.get('url'), esc(n.get('headline')), n.get('url_verified', True))}</strong>
             <span class="source">({esc(n.get('source'))})</span>
             <p>{esc(n.get('summary'))}</p>
@@ -373,7 +399,7 @@ def build_html(data):
     """ for n in data.get("local_news", []))
 
     national_html = "".join(f"""
-        <li>
+        <li class="list-item">
             <strong>{link_tag(n.get('url'), esc(n.get('headline')), n.get('url_verified', True))}</strong>
             <span class="source">({esc(n.get('source'))})</span>
             <p>{esc(n.get('summary'))}</p>
@@ -390,12 +416,13 @@ def build_html(data):
     <title>Paul's Daily Brief</title>
     <style>
         :root {{
-            --bg: #f8fafc;
+            --bg: #e2e8f0;
             --card: #ffffff;
-            --text: #1e293b;
-            --muted: #64748b;
-            --accent: #0f766e;
-            --border: #e2e8f0;
+            --text: #000000;
+            --muted: #1e3a8a;
+            --accent: #1d4ed8;
+            --link: #1e40af;
+            --border: #93c5fd;
         }}
         body {{
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -407,57 +434,64 @@ def build_html(data):
         }}
         .container {{ max-width: 960px; margin: 0 auto; }}
         header {{
-            border-bottom: 2px solid var(--border);
+            border-bottom: 2px solid var(--accent);
             padding-bottom: 16px;
             margin-bottom: 24px;
         }}
-        h1 {{ margin: 0; font-size: 1.75rem; }}
+        h1 {{ margin: 0; font-size: 1.75rem; color: var(--text); }}
         .updated {{ color: var(--muted); font-size: 0.9rem; margin-top: 4px; }}
         .quote-box {{
-            background: #f0fdfa;
+            background: var(--card);
             border-left: 4px solid var(--accent);
+            border-top: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
             padding: 18px 22px;
             border-radius: 8px;
             margin-bottom: 28px;
         }}
-        .quote-box blockquote {{ margin: 0 0 8px 0; font-size: 1.1rem; font-style: italic; }}
+        .quote-box blockquote {{ margin: 0 0 8px 0; font-size: 1.1rem; font-style: italic; color: var(--text); }}
         .quote-box cite {{ color: var(--muted); font-size: 0.9rem; }}
         h2 {{
             margin-top: 32px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--accent);
             padding-bottom: 6px;
             color: var(--accent);
         }}
         h3.subsection {{
             margin: 20px 0 12px 0;
             font-size: 1.05rem;
-            color: #334155;
+            color: var(--muted);
         }}
-        .grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
+        ul.item-list {{
+            list-style: none;
+            padding: 0;
+            margin: 0;
         }}
-        .card {{
+        li.list-item {{
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
         }}
-        .card h3 {{ margin: 6px 0; font-size: 1.05rem; }}
+        li.list-item p {{ margin: 6px 0 0 0; font-size: 0.95rem; color: var(--text); }}
+        .meta-line {{ margin-top: 6px; }}
         .team-headline {{
-            background: #f1f5f9;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
             padding: 8px 10px;
             border-radius: 6px;
-            margin: 10px 0;
+            margin-top: 8px !important;
             font-size: 0.92rem;
+            color: var(--text);
         }}
-        .row-between {{ display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }}
+        .row-between {{ display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }}
         .badge {{
             display: inline-block;
-            background: #e2e8f0;
-            color: #334155;
+            background: #dbeafe;
+            color: var(--muted);
             font-size: 0.75rem;
             font-weight: 600;
             padding: 2px 8px;
@@ -465,8 +499,8 @@ def build_html(data):
             margin-right: 4px;
         }}
         .deal-badge {{
-            background: #ccfbf1;
-            color: #0f766e;
+            background: #bfdbfe;
+            color: var(--text);
         }}
         .search-tag {{
             font-size: 0.75rem;
@@ -474,18 +508,9 @@ def build_html(data):
             font-weight: normal;
         }}
         .price {{ font-weight: 700; color: var(--accent); white-space: nowrap; }}
-        .meta {{ color: var(--muted); font-size: 0.88rem; }}
-        a {{ color: #0369a1; text-decoration: none; }}
-        a:hover {{ text-decoration: underline; }}
-        ul.news-list {{ list-style: none; padding: 0; }}
-        ul.news-list li {{
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 14px 16px;
-            margin-bottom: 12px;
-        }}
-        ul.news-list p {{ margin: 6px 0 0 0; font-size: 0.95rem; }}
+        .meta {{ color: var(--muted) !important; font-size: 0.88rem; }}
+        a {{ color: var(--link); text-decoration: none; }}
+        a:hover {{ color: var(--text); text-decoration: underline; }}
         .source {{ color: var(--muted); font-size: 0.85rem; margin-left: 6px; }}
     </style>
 </head>
@@ -502,30 +527,30 @@ def build_html(data):
         </section>
 
         <h2>Minnesota Pro Sports</h2>
-        <div class="grid">{sports_html}</div>
+        <ul class="item-list">{sports_html}</ul>
 
-        <h2>Top 5 Sports Headlines</h2>
-        <ul class="news-list">{sports_news_html}</ul>
+        <h2>Top 5 Sports Headlines (ESPN)</h2>
+        <ul class="item-list">{sports_news_html}</ul>
 
         <h2>Top 5 Local News (45140 / Greater Cincinnati)</h2>
-        <ul class="news-list">{local_html}</ul>
+        <ul class="item-list">{local_html}</ul>
 
         <h2>Top 5 National News (Neutral Sources)</h2>
-        <ul class="news-list">{national_html}</ul>
+        <ul class="item-list">{national_html}</ul>
 
         <h2>45140 Area Investment Real Estate</h2>
         <h3 class="subsection">Single-Family Homes (Max $500,000 &bull; New &amp; Value Deals)</h3>
-        <div class="grid">{sfh_html}</div>
+        <ul class="item-list">{sfh_html}</ul>
 
         <h3 class="subsection">Multifamily Properties (Max $1,500,000 &bull; New &amp; Value Deals)</h3>
-        <div class="grid">{mfh_html}</div>
+        <ul class="item-list">{mfh_html}</ul>
 
         <h2>Top 10 Events Near 45140</h2>
         <h3 class="subsection">This Month ({esc(current_month)})</h3>
-        <div class="grid">{events_this_html}</div>
+        <ul class="item-list">{events_this_html}</ul>
 
         <h3 class="subsection">Next Month ({esc(next_month)})</h3>
-        <div class="grid">{events_next_html}</div>
+        <ul class="item-list">{events_next_html}</ul>
     </div>
 </body>
 </html>
