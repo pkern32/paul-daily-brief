@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>45140 Daily Brief &amp; Minnesota Sports</title>
+    <title>Paul's Daily Brief</title>
     <style>
         :root {
             --bg: #f8fafc;
@@ -44,6 +44,11 @@
             padding-bottom: 6px;
             color: var(--accent);
         }
+        h3.subsection {
+            margin: 20px 0 12px 0;
+            font-size: 1.05rem;
+            color: #334155;
+        }
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -57,6 +62,13 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         }
         .card h3 { margin: 6px 0; font-size: 1.05rem; }
+        .team-headline {
+            background: #f1f5f9;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 0.92rem;
+        }
         .row-between { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
         .badge {
             display: inline-block;
@@ -66,8 +78,18 @@
             font-weight: 600;
             padding: 2px 8px;
             border-radius: 999px;
+            margin-right: 4px;
         }
-        .price { font-weight: 700; color: var(--accent); }
+        .deal-badge {
+            background: #ccfbf1;
+            color: #0f766e;
+        }
+        .search-tag {
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: normal;
+        }
+        .price { font-weight: 700; color: var(--accent); white-space: nowrap; }
         .meta { color: var(--muted); font-size: 0.88rem; }
         a { color: #0369a1; text-decoration: none; }
         a:hover { text-decoration: underline; }
@@ -86,13 +108,13 @@
 <body>
     <div class="container">
         <header>
-            <h1>Loveland (45140) &amp; Minnesota Sports Brief</h1>
-            <div class="updated">Last refreshed: Friday, November 27, 2026 at 04:27 PM EST &bull; Auto-updates every 4 hours</div>
+            <h1>Paul's Daily Brief</h1>
+            <div class="updated">Last refreshed: Friday, November 27, 2026 at 05:14 PM EST &bull; Auto-updates every 4 hours</div>
         </header>
 
         <section class="quote-box">
-            <blockquote>&ldquo;What we have once enjoyed deeply we can never lose. All that we love deeply becomes a part of us.&rdquo;</blockquote>
-            <cite>&mdash; <a href="https://www.goodreads.com/quotes/8342-what-we-have-once-enjoyed-deeply-we-can-never" target="_blank" rel="noopener">Helen Keller</a></cite>
+            <blockquote>&ldquo;Grief is not a linear slide into darkness. It is a cyclical path that eventually rotates into light. Spring comes after the cold, harsh winter. Yes, there are seasons when grief is louder and more disruptive, but there are also seasons when grief backs off, your strength returns, and night turns into morning.&rdquo;</blockquote>
+            <cite>&mdash; <a href="https://www.goodreads.com/work/quotes/85636992-your-grief-your-way-a-year-of-practical-guidance-and-comfort-after-los" target="_blank" rel="noopener">Shelby Forsythia</a></cite>
         </section>
 
         <h2>Minnesota Pro Sports</h2>
@@ -102,9 +124,13 @@
                 <h3>Minnesota Vikings</h3>
                 <span class="badge">In-Season</span>
             </div>
-            <p><strong>Final:</strong> San Francisco 49ers 35 - Minnesota Vikings 10 &mdash; <a href="https://www.cbssports.com/nfl/gametracker/recap/NFL_20261122_MIN@SF/" target="_blank" rel="noopener">Box Score &rarr;</a></p>
-            <p><strong>Top Performers:</strong> Kirk Cousins 14/23 for 137 yards; Justin Jefferson 6 receptions for 64 yards; Aaron Jones 14 carries for 48 yards</p>
-            <p class="meta"><strong>Next Game:</strong> vs. Chicago Bears, Sunday, November 29, 2026, 1:00 PM ET &bull; <a href="https://www.vikings.com/schedule/" target="_blank" rel="noopener">Schedule</a></p>
+            <div class="team-headline">
+                <strong>Top Headline:</strong> <a href="https://www.nfl.com/teams/minnesota-vikings/" target="_blank" rel="noopener">Vikings Prepare For High-Stakes NFC Battle After Resilient Start</a>
+                <span class="source">(NFL.com)</span>
+            </div>
+            <p><strong>Final:</strong> Vikings 23 - Saints 17 &mdash; <a href="https://www.google.com/search?q=Minnesota+Vikings+box+score+Vikings+23+-+Saints+17" target="_blank" rel="noopener">Box Score &rarr;</a> <span class='search-tag'>[Search]</span></p>
+            <p><strong>Top Performers:</strong> Brian Flores&#x27; defensive unit generated crucial fourth-quarter stops while Kevin O&#x27;Connell&#x27;s offense controlled time of possession.</p>
+            <p class="meta"><strong>Next Game:</strong> vs. Atlanta Falcons, Sunday, Nov 29, 2026, 1:00 PM (ET) &bull; <a href="https://www.vikings.com/schedule/" target="_blank" rel="noopener">Schedule</a></p>
         </div>
     
         <div class="card">
@@ -112,9 +138,13 @@
                 <h3>Minnesota Timberwolves</h3>
                 <span class="badge">In-Season</span>
             </div>
-            <p><strong>Final:</strong> Minnesota Timberwolves 113 - Oklahoma City Thunder 106 &mdash; <a href="https://www.basketball-reference.com/boxscores/202611250OKC.html" target="_blank" rel="noopener">Box Score &rarr;</a></p>
-            <p><strong>Top Performers:</strong> Jaden McDaniels 25 points, 6 rebounds; Rudy Gobert 14 points, 11 rebounds, 3 blocks; Terrence Shannon Jr. 15 points off bench</p>
-            <p class="meta"><strong>Next Game:</strong> vs. Memphis Grizzlies, Friday, November 27, 2026, 8:30 PM ET &bull; <a href="https://www.nba.com/timberwolves/schedule" target="_blank" rel="noopener">Schedule</a></p>
+            <div class="team-headline">
+                <strong>Top Headline:</strong> <a href="https://www.si.com/nba/timberwolves/onsi/3-timberwolves-box-score-stats-vs-thunder-that-raise-eyebrows-01m8b0ks5hvz" target="_blank" rel="noopener">Timberwolves Stand Firm in Road Victory Over Thunder Behind Clutch Play</a>
+                <span class="source">(Sports Illustrated)</span>
+            </div>
+            <p><strong>Final:</strong> Timberwolves 113 - Thunder 106 &mdash; <a href="https://www.google.com/search?q=Minnesota+Timberwolves+box+score+Timberwolves+113+-+Thunder+106" target="_blank" rel="noopener">Box Score &rarr;</a> <span class='search-tag'>[Search]</span></p>
+            <p><strong>Top Performers:</strong> Ayo Dosunmu sealed the victory with 5 clutch late points as Minnesota&#x27;s league-leading defense contained OKC down the stretch.</p>
+            <p class="meta"><strong>Next Game:</strong> vs. Memphis Grizzlies, Friday, Nov 27, 2026, 8:30 PM (ET) &bull; <a href="https://www.sportsmediawatch.com/tv-schedules/nba-tv-schedule/minnesota-timberwolves/" target="_blank" rel="noopener">Schedule</a></p>
         </div>
     
         <div class="card">
@@ -122,9 +152,13 @@
                 <h3>Minnesota Wild</h3>
                 <span class="badge">In-Season</span>
             </div>
-            <p><strong>Final:</strong> Utah Mammoth 4 - Minnesota Wild 3 &mdash; <a href="https://www.hockey-reference.com/boxscores/202611250MIN.html" target="_blank" rel="noopener">Box Score &rarr;</a></p>
-            <p><strong>Top Performers:</strong> Kirill Kaprizov 1 goal, 1 assist; Matt Boldy 1 goal; Jesper Wallstedt 28 saves on 32 shots</p>
-            <p class="meta"><strong>Next Game:</strong> vs. Colorado Avalanche, Friday, November 27, 2026, 4:00 PM ET &bull; <a href="https://www.nhl.com/wild/schedule" target="_blank" rel="noopener">Schedule</a></p>
+            <div class="team-headline">
+                <strong>Top Headline:</strong> <a href="https://www.cbssports.com/nhl/gametracker/boxscore/NHL_20261127_COL@MIN/" target="_blank" rel="noopener">Central Division Leaders Wild Clash with Avalanche in Holiday Matinee</a>
+                <span class="source">(CBS Sports)</span>
+            </div>
+            <p><strong>Final:</strong> Wild 4 - Stars 2 &mdash; <a href="https://www.cbssports.com/nhl/gametracker/boxscore/NHL_20261127_COL@MIN/" target="_blank" rel="noopener">Box Score &rarr;</a></p>
+            <p><strong>Top Performers:</strong> Resilient defensive structure and key power-play execution propelled Minnesota to maintain the top spot in the Western Conference Central Division.</p>
+            <p class="meta"><strong>Next Game:</strong> vs. Chicago Blackhawks, Sunday, Nov 29, 2026, 11:00 AM (ET) &bull; <a href="https://www.foxsports.com/nhl/minnesota-wild-team-schedule" target="_blank" rel="noopener">Schedule</a></p>
         </div>
     
         <div class="card">
@@ -132,198 +166,268 @@
                 <h3>Minnesota Twins</h3>
                 <span class="badge">Offseason</span>
             </div>
-            <p><strong>Final:</strong> Offseason (Concluded 2026 regular season with 77-85 record; 4-1 loss to Tigers in late September finale) &mdash; <a href="https://www.baseball-reference.com/teams/MIN/2026-schedule-scores.shtml" target="_blank" rel="noopener">Box Score &rarr;</a></p>
-            <p><strong>Top Performers:</strong> Joe Ryan 13-9, 3.42 ERA; Bailey Ober 12-8, 185 Ks; Ryan Jeffers 22 HR, 68 RBI (2026 Season Leaders)</p>
-            <p class="meta"><strong>Next Game:</strong> Spring Training Opener vs. Boston Red Sox, late February 2027 &bull; <a href="https://www.mlb.com/twins/schedule" target="_blank" rel="noopener">Schedule</a></p>
-        </div>
-    
-        <div class="card">
-            <div class="row-between">
-                <h3>Minnesota United FC</h3>
-                <span class="badge">Offseason</span>
+            <div class="team-headline">
+                <strong>Top Headline:</strong> <a href="https://espnsiouxfalls.com/sonny-gray-fa-minnesota-twins/" target="_blank" rel="noopener">Minnesota Twins Reunite with Sonny Gray on Two-Year, $55 Million Deal</a>
+                <span class="source">(ESPN Sioux Falls)</span>
             </div>
-            <p><strong>Final:</strong> Minnesota United FC 3 - San Jose Earthquakes 1 &mdash; <a href="https://www.mlssoccer.com/competitions/mls-regular-season/2026/matches/sjvsmin-11-07-2026/" target="_blank" rel="noopener">Box Score &rarr;</a></p>
-            <p><strong>Top Performers:</strong> Kelvin Yeboah 1 goal (17th of season), 1 assist; Bongokuhle Hlongwane 1 goal; Drake Callender 5 saves</p>
-            <p class="meta"><strong>Next Game:</strong> 2027 MLS Regular Season Opener, late February 2027 &bull; <a href="https://www.mnufc.com/schedule" target="_blank" rel="noopener">Schedule</a></p>
-        </div>
-    
-        <div class="card">
-            <div class="row-between">
-                <h3>Minnesota Lynx</h3>
-                <span class="badge">Offseason</span>
-            </div>
-            <p><strong>Final:</strong> New York Liberty 87 - Minnesota Lynx 71 &mdash; <a href="https://www.basketball-reference.com/wnba/teams/MIN/2026_games.html" target="_blank" rel="noopener">Box Score &rarr;</a></p>
-            <p><strong>Top Performers:</strong> Napheesa Collier 24 points, 10 rebounds; Kayla McBride 18 points, 4 three-pointers; Courtney Williams 7 assists</p>
-            <p class="meta"><strong>Next Game:</strong> 2027 WNBA Season Tipoff, May 2027 &bull; <a href="https://lynx.wnba.com/schedule/" target="_blank" rel="noopener">Schedule</a></p>
+            <p><strong>Final:</strong> Offseason (concluded 2026 MLB regular season) &mdash; <a href="https://www.mlb.com/twins" target="_blank" rel="noopener">Box Score &rarr;</a></p>
+            <p><strong>Top Performers:</strong> Sonny Gray posted an 18-5 record with a 2.72 ERA over 169 innings before agreeing to return to the Twins&#x27; rotation.</p>
+            <p class="meta"><strong>Next Game:</strong> Spring Training Opener, February 2027 &bull; <a href="https://www.mlb.com/twins" target="_blank" rel="noopener">Schedule</a></p>
         </div>
     </div>
+
+        <h2>Top 5 Sports Headlines</h2>
+        <ul class="news-list">
+        <li>
+            <strong><a href="https://www.google.com/search?q=Mets+Owner+Steve+Cohen+Pursues+Tarik+Skubal+in+Aggressive+Winter+Rebuild+Associated+Press" target="_blank" rel="noopener">Mets Owner Steve Cohen Pursues Tarik Skubal in Aggressive Winter Rebuild</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="source">(Associated Press)</span>
+            <p>Following back-to-back seasons missing the postseason, the New York Mets have entered the free agency market with significant payroll flexibility to target elite starting pitching. Club leadership continues to evaluate long-term options to anchor their starting rotation ahead of spring camp.</p>
+        </li>
+    
+        <li>
+            <strong><a href="https://www.google.com/search?q=With+MLB+Backing+Salary+Cap+Concept%2C+Players+Counter+on+Direct+Revenue+Sharing+Associated+Press" target="_blank" rel="noopener">With MLB Backing Salary Cap Concept, Players Counter on Direct Revenue Sharing</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="source">(Associated Press)</span>
+            <p>Major League Baseball commissioner Rob Manfred addressed league economic discussions, reiterating ownership interest in salary caps. The MLB Players Association firmly pushed back, arguing that broader franchise revenue sharing without salary suppression remains the correct collective model.</p>
+        </li>
+    
+        <li>
+            <strong><a href="https://www.google.com/search?q=Indianapolis+Colts+Announce+Quarterback+Shift+as+Offensive+Woes+Mount+Associated+Press" target="_blank" rel="noopener">Indianapolis Colts Announce Quarterback Shift as Offensive Woes Mount</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="source">(Associated Press)</span>
+            <p>The Indianapolis Colts front office decided on a major quarterback change following persistent offensive turnover issues in recent weeks. Team management confirmed their roster restructuring as they prepare for the final stretch of the NFL regular season.</p>
+        </li>
+    
+        <li>
+            <strong><a href="https://www.google.com/search?q=X+Games+Launches+Global+Action+Sports+League+and+Foundation+ESPN+%2F+X+Games" target="_blank" rel="noopener">X Games Launches Global Action Sports League and Foundation</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="source">(ESPN / X Games)</span>
+            <p>X Games announced the formal creation of the X Games Foundation alongside its new team-based action sports league format. The multi-city circuit will feature elite skateboarders, snowboarders, and BMX athletes competing for regional franchise championships.</p>
+        </li>
+    
+        <li>
+            <strong><a href="https://www.google.com/search?q=Relief+Pitcher+Kevin+Ginkel+Reaches+Two-Year+Free+Agent+Agreement+ESPN" target="_blank" rel="noopener">Relief Pitcher Kevin Ginkel Reaches Two-Year Free Agent Agreement</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="source">(ESPN)</span>
+            <p>Veteran late-inning reliever Kevin Ginkel secured a two-year, $18 million contract on the open market to bolster bullpen depth. The deal represents another early domino falling among high-leverage bullpen arms this winter.</p>
+        </li>
+    </ul>
 
         <h2>Top 5 Local News (45140 / Greater Cincinnati)</h2>
         <ul class="news-list">
         <li>
-            <a href="https://lovelandlocalnews.com/" target="_blank" rel="noopener"><strong>City of Loveland Finalizes Nisbet Park Riverfront Enhancements and Swing Installation</strong></a>
-            <span class="source">(Loveland Local News)</span>
-            <p>Loveland city officials celebrated the completion of new scenic riverfront swings and public photo stations at Nisbet Park along the Little Miami River. The improvements are part of the ongoing downtown master plan designed to improve open-space connectivity and river viewing.</p>
-        </li>
-    
-        <li>
-            <a href="https://www.wvxu.org/local-news/2026-11-25/green-friday-ohio-state-parks" target="_blank" rel="noopener"><strong>Ohio State Parks Promote &#x27;Green Friday&#x27; Outdoor Recreation Across Southwest Ohio</strong></a>
+            <strong><a href="https://www.wvxu.org/tags/ohio-news" target="_blank" rel="noopener">Ohio State Parks Promote &#x27;Green Friday&#x27; with Free Admission Across 76 Parks</a></strong>
             <span class="source">(WVXU)</span>
-            <p>The Ohio Department of Natural Resources welcomed visitors with free admission across all 76 state parks as an alternative to retail shopping. Park rangers noted strong turnout across Warren and Clermont county trail systems following holiday gatherings.</p>
+            <p>The Ohio Department of Natural Resources is urging Tri-State residents to swap shopping carts for hiking boots across Ohio&#x27;s 76 state parks this holiday weekend. All parks feature free admission and scenic fall trail access throughout Clermont and Hamilton counties.</p>
         </li>
     
         <li>
-            <a href="https://clermontcountyohio.gov/news/" target="_blank" rel="noopener"><strong>Clermont County Advances Transit Study to Enhance Commuter Connections</strong></a>
-            <span class="source">(Clermont County Government)</span>
-            <p>Clermont County officials have launched a comprehensive transit study assessing route efficiency for Clermont Transportation Connection. Public feedback sessions aim to improve fixed-route service connecting suburban communities to eastern Cincinnati employment hubs.</p>
-        </li>
-    
-        <li>
-            <a href="https://www.wvxu.org/local-news/2026-11-24/delta-queen-tri-state-preservation" target="_blank" rel="noopener"><strong>Regional Preservation Coalition Seeks Permanent Ohio River Berth for Historic Delta Queen</strong></a>
+            <strong><a href="https://www.wvxu.org/tags/ohio-news" target="_blank" rel="noopener">Ohio Manufacturers Coalition Calls for Reforms at State Utility Commission</a></strong>
             <span class="source">(WVXU)</span>
-            <p>The Delta Queen Steamboat Preservation Trust has partnered with regional heritage groups to establish a permanent mooring and educational home for the historic paddlewheel vessel. Advocates emphasize the project&#x27;s long-term economic and cultural tourism potential for the Tri-State riverfront.</p>
+            <p>The Ohio Manufacturers Association highlighted key opportunities for state leadership to adjust commercial power oversight at the Public Utilities Commission of Ohio. Business leaders stressed that rate stability is critical to keeping Southwest Ohio industrial facilities competitive.</p>
         </li>
     
         <li>
-            <a href="https://www.wlwt.com/article/jbm-packaging-fair-chance-lebanon-expansion/62015482" target="_blank" rel="noopener"><strong>Warren County Packaging Facility Celebrates Milestone in Fair Chance Hiring Program</strong></a>
-            <span class="source">(WLWT)</span>
-            <p>A major packaging manufacturer in Lebanon marked continued success at its second facility, which provides manufacturing employment to individuals reentering the workforce. Regional business groups commended the initiative for addressing local labor shortages while reducing recidivism.</p>
+            <strong><a href="https://www.wvxu.org/local-news" target="_blank" rel="noopener">Cincinnati NAACP and Law Enforcement Urge Veto of Concealed Carry Age Bill</a></strong>
+            <span class="source">(WVXU)</span>
+            <p>Civil rights leaders and Hamilton County law enforcement officers called on Governor Mike DeWine to veto Senate Bill 278, which lowers the state concealed handgun age to 18. Opponents voiced concern that permitting teenagers to carry concealed firearms without permits will increase community risks.</p>
+        </li>
+    
+        <li>
+            <strong><a href="https://www.wvxu.org/local-news" target="_blank" rel="noopener">Tri-State Coalition Launches New Campaign to Preserve Historic Delta Queen Steamboat</a></strong>
+            <span class="source">(WVXU)</span>
+            <p>A preservation partnership between the Delta Queen Steamboat Trust and regional museum directors is seeking a permanent docking facility along the Ohio River. Advocates aim to protect the storied National Historic Landmark vessel and reestablish it as an interactive educational hub.</p>
+        </li>
+    
+        <li>
+            <strong><a href="https://www.wvxu.org/cincinnati-city-council" target="_blank" rel="noopener">Cincinnati City Council Postpones Water Rate Vote Over Cost Burden Concerns</a></strong>
+            <span class="source">(WVXU)</span>
+            <p>City officials delayed a scheduled vote on a 9.5% Greater Cincinnati Water Works rate adjustment to examine economic protections for working families. Utility managers indicated the revenue is necessary to meet EPA requirements for lead service line eradication and filtration upgrades.</p>
         </li>
     </ul>
 
         <h2>Top 5 National News (Neutral Sources)</h2>
         <ul class="news-list">
         <li>
-            <a href="https://apnews.com/article/army-lead-azide-detonation-iowa-epa-air-tests-7d84a9e34b12" target="_blank" rel="noopener"><strong>EPA and Army Report Zero Airborne Lead Detected Following Iowa Stockpile Detonation</strong></a>
+            <strong><a href="https://www.google.com/search?q=Federal+Judge+Denies+Long-Term+Ban+on+Government-Funded+Issue+Advertisements+Associated+Press" target="_blank" rel="noopener">Federal Judge Denies Long-Term Ban on Government-Funded Issue Advertisements</a> <span class='search-tag'>[Search]</span></strong>
             <span class="source">(Associated Press)</span>
-            <p>Federal environmental officials confirmed that air quality monitors detected no airborne lead contamination following the controlled explosion of a degraded chemical stockpile in Middletown, Iowa. Environmental teams continue testing soil, dust, and water samples to ensure surrounding residential areas remain completely safe.</p>
+            <p>A federal judge ruled against imposing an extended injunction on federally funded informational ads following the conclusion of the 2026 midterm election cycle. The court found that arguments regarding speculative harm in upcoming runoff elections failed to meet the necessary standard for judicial relief.</p>
         </li>
     
         <li>
-            <a href="https://www.pbs.org/newshour/nation/heavy-rain-winds-down-as-power-remains-out-for-hundreds-of-thousands-on-the-east-coast" target="_blank" rel="noopener"><strong>East Coast Communities Clean Up and Restore Power After Powerful Holiday Storm System</strong></a>
-            <span class="source">(PBS NewsHour)</span>
-            <p>Heavy rain, coastal flooding, and high winds that battered eastern states on Thanksgiving began subsiding as utility crews restored electricity to hundreds of thousands of homes. The severe weather triggered localized water rescues and prompted the rare postponement of holiday events across the Northeast.</p>
-        </li>
-    
-        <li>
-            <a href="https://apnews.com/article/black-friday-spending-retail-inflation-deals-59821374ac" target="_blank" rel="noopener"><strong>Retailers See Strong Early Holiday Spending as Shoppers Seek Black Friday Value</strong></a>
-            <span class="source">(Associated Press)</span>
-            <p>U.S. consumers showed steady demand through online and in-store promotions, driving substantial early holiday retail volumes despite broader household budget scrutiny. Analysts noted that promotional discounting and flexible payment options played a central role in sustaining shopper participation.</p>
-        </li>
-    
-        <li>
-            <a href="https://www.pbs.org/newshour/politics/judge-declines-to-issue-a-long-term-ban-on-taxpayer-funded-pro-trump-ads-critics-called-propaganda" target="_blank" rel="noopener"><strong>Federal Judge Denies Long-Term Injunction on Government Public Broadcast Advertisements</strong></a>
-            <span class="source">(PBS NewsHour)</span>
-            <p>A federal district judge declined to extend a restriction on federally funded public broadcast spots that had faced legal challenges ahead of November&#x27;s election. The court determined that the conclusion of the general election cycle diminished grounds for emergency injunctive relief.</p>
-        </li>
-    
-        <li>
-            <a href="https://www.npr.org/2026/11/25/congress-affordability-priorities-midterm-transition" target="_blank" rel="noopener"><strong>Incoming Congressional Lawmakers Focus Agendas on National Cost-of-Living Priorities</strong></a>
+            <strong><a href="https://apps.npr.org/2026-election-results/" target="_blank" rel="noopener">Incoming Congressional Class Focuses on Affordability and Healthcare Agenda</a></strong>
             <span class="source">(NPR)</span>
-            <p>Newly elected senators and representatives prepared legislative frameworks prioritizing household affordability, healthcare expenses, and energy utility rates ahead of January&#x27;s swearing-in. Nonpartisan fiscal policy analysts noted that bipartisan compromise will be critical for addressing persistent inflationary pressures.</p>
+            <p>Members of Congress preparing for the forthcoming legislative session signaled an immediate focus on household living expenses, including grocery and energy costs. Lawmakers across party lines emphasized that constituent concerns regarding economic stability will shape early committee priorities.</p>
+        </li>
+    
+        <li>
+            <strong><a href="https://www.ap.org/news-highlights/best-of-the-week/honorable-mention/2026/a-fathers-grief-reveals-the-human-stakes-of-trumps-proposed-triumphal-arch/" target="_blank" rel="noopener">Military Families Raise Concerns Over Proposed National Monument Near Arlington Cemetery</a></strong>
+            <span class="source">(Associated Press)</span>
+            <p>Gold Star families testified before a capital planning commission regarding a proposed triumphal monument, raising concerns about the structure&#x27;s proximity to Arlington National Cemetery. Family representatives urged planners to respect the contemplative sanctuary surrounding fallen service members.</p>
+        </li>
+    
+        <li>
+            <strong><a href="https://www.google.com/search?q=Federal+Appeals+Panel+Validates+State+Congressional+Boundaries+Associated+Press" target="_blank" rel="noopener">Federal Appeals Panel Validates State Congressional Boundaries</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="source">(Associated Press)</span>
+            <p>A federal appellate panel upheld state congressional redistricting maps, dismissing statutory challenges brought by voting advocacy organizations. The court concluded that the redrawn districts complied with federal statutory standards governing reapportionment.</p>
+        </li>
+    
+        <li>
+            <strong><a href="https://www.google.com/search?q=East+Coast+Recovery+Continues+Following+Widespread+Thanksgiving+Storm+Associated+Press" target="_blank" rel="noopener">East Coast Recovery Continues Following Widespread Thanksgiving Storm</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="source">(Associated Press)</span>
+            <p>Utility crews worked to restore power to hundreds of thousands of customers along the Atlantic seaboard after a severe holiday storm brought heavy rain and gale winds. Regional transit agencies reported normalizing operations as cleanup efforts progressed.</p>
         </li>
     </ul>
 
-        <h2>45140 Investment Real Estate (STR &amp; Multifamily)</h2>
+        <h2>45140 Area Investment Real Estate</h2>
+        <h3 class="subsection">Single-Family Homes (Max $500,000 &bull; New &amp; Value Deals)</h3>
         <div class="grid">
         <div class="card">
             <div class="row-between">
-                <h3><a href="https://www.redfin.com/OH/Loveland/204-Railroad-Ave-45140/home/1866862" target="_blank" rel="noopener">204 Railroad Ave, Loveland, OH 45140</a></h3>
-                <span class="price">$999,000</span>
+                <h3><a href="https://www.google.com/search?q=807+Kenmar+Dr%2C+Loveland%2C+OH+45140+real+estate+for+sale" target="_blank" rel="noopener">807 Kenmar Dr, Loveland, OH 45140</a> <span class='search-tag'>[Search]</span></h3>
+                <span class="price">$499,900</span>
             </div>
-            <span class="badge">Short-Term Rental (Airbnb)</span>
-            <p style="margin-top:8px;">3 beds/2.5 baths, 2,360 sq ft new-build Cape Cod situated directly across from Nisbet Park and the Little Miami Scenic Trail in Historic Downtown; prime position for premium cyclist getaways and wedding weekend bookings within the DORA district.</p>
+            <div style="margin-top: 6px;">
+                <span class="badge deal-badge">Price Cut / Value Deal</span>
+                <span class="badge">Long-Term Rental</span>
+            </div>
+            <p style="margin-top:10px;">4 beds, 2 baths, 2,363 sqft; price cut by $10,000. Features generous living space and mature trees just minutes from downtown Loveland and the Little Miami Scenic Trail, delivering strong suburban rental appeal.</p>
         </div>
     
         <div class="card">
             <div class="row-between">
-                <h3><a href="https://www.zillow.com/homedetails/114-Broadway-St-Loveland-OH-45140/34685458_zpid/" target="_blank" rel="noopener">114 Broadway St, Loveland, OH 45140</a></h3>
-                <span class="price">$700,000</span>
+                <h3><a href="https://www.google.com/search?q=1526+Rolling+Knoll+Dr%2C+Loveland%2C+OH+45140+real+estate+for+sale" target="_blank" rel="noopener">1526 Rolling Knoll Dr, Loveland, OH 45140</a> <span class='search-tag'>[Search]</span></h3>
+                <span class="price">$305,000</span>
             </div>
-            <span class="badge">Short-Term Rental (Airbnb)</span>
-            <p style="margin-top:8px;">3 beds/3 baths, 1,980 sq ft historic single-family home steps from Downtown Loveland&#x27;s dining and Little Miami River access; strong short-term rental layout with private parking and immediate access to commuter routes and trail recreation.</p>
+            <div style="margin-top: 6px;">
+                <span class="badge deal-badge">Price Cut / Value Deal</span>
+                <span class="badge">Long-Term Rental</span>
+            </div>
+            <p style="margin-top:10px;">3 beds, 3 baths, 1,392 sqft; recent $15,000 price drop. Accessible entry pricing in high-demand Loveland school district provides strong debt service coverage and stable tenancy.</p>
         </div>
     
         <div class="card">
             <div class="row-between">
-                <h3><a href="https://www.zillow.com/homedetails/204-Highland-St-Loveland-OH-45140/34685459_zpid/" target="_blank" rel="noopener">204 Highland St, Loveland, OH 45140</a></h3>
-                <span class="price">$4,250,000</span>
+                <h3><a href="https://www.google.com/search?q=1281+Sand+Trap+Ct%2C+Loveland%2C+OH+45140+real+estate+for+sale" target="_blank" rel="noopener">1281 Sand Trap Ct, Loveland, OH 45140</a> <span class='search-tag'>[Search]</span></h3>
+                <span class="price">$234,900</span>
             </div>
-            <span class="badge">Long-Term Rental (Multifamily)</span>
-            <p style="margin-top:8px;">31-unit multifamily asset on 2.49 acres (26 one-bedroom, 5 two-bedroom apartments) with 100% occupancy; turnkey cashflow engine in the top-rated Loveland School District minutes from I-275 for strong commuter tenant retention.</p>
+            <div style="margin-top: 6px;">
+                <span class="badge deal-badge">Price Cut / Value Deal</span>
+                <span class="badge">Value-Add</span>
+            </div>
+            <p style="margin-top:10px;">3 beds, 2 baths, 1,564 sqft; price reduced by $7,000. Outstanding value-per-square-foot basis in 45140 with cosmetic upside, ideal for a light renovation to maximize forced appreciation or yield.</p>
+        </div>
+    </div>
+
+        <h3 class="subsection">Multifamily Properties (Max $1,500,000 &bull; New &amp; Value Deals)</h3>
+        <div class="grid">
+        <div class="card">
+            <div class="row-between">
+                <h3><a href="https://www.google.com/search?q=800+Lila+Ave%2C+Milford%2C+OH+45150+multifamily+for+sale" target="_blank" rel="noopener">800 Lila Ave, Milford, OH 45150</a> <span class='search-tag'>[Search]</span></h3>
+                <span class="price">$1,199,900</span>
+            </div>
+            <div style="margin-top: 6px;">
+                <span class="badge deal-badge">New Listing</span>
+                <span class="badge">Small Apartment Building</span>
+            </div>
+            <p style="margin-top:10px;">12 units, 12 beds, 12 baths, 9,306 sqft; newly listed within 4 miles of Loveland. Sub-$100k per-unit cost basis offering significant scale, immediate cashflow, and strong tenant demand along the Route 50 artery.</p>
+        </div>
+    
+        <div class="card">
+            <div class="row-between">
+                <h3><a href="https://www.google.com/search?q=7071+Eastlawn+Dr%2C+Cincinnati%2C+OH+45237+multifamily+for+sale" target="_blank" rel="noopener">7071 Eastlawn Dr, Cincinnati, OH 45237</a> <span class='search-tag'>[Search]</span></h3>
+                <span class="price">$325,000</span>
+            </div>
+            <div style="margin-top: 6px;">
+                <span class="badge deal-badge">New Listing</span>
+                <span class="badge">Quadplex</span>
+            </div>
+            <p style="margin-top:10px;">4 units, 8 beds, 4 baths on a 0.36-acre lot; fresh to market. Low capital entry point under $350k provides an estimated 9%+ cap rate potential with upside through hands-on operational management.</p>
+        </div>
+    
+        <div class="card">
+            <div class="row-between">
+                <h3><a href="https://www.google.com/search?q=2440+Moler+Rd%2C+Goshen+Township%2C+OH+45122+multifamily+for+sale" target="_blank" rel="noopener">2440 Moler Rd, Goshen Township, OH 45122</a> <span class='search-tag'>[Search]</span></h3>
+                <span class="price">$519,900</span>
+            </div>
+            <div style="margin-top: 6px;">
+                <span class="badge deal-badge">Price Cut / Value Deal</span>
+                <span class="badge">Duplex</span>
+            </div>
+            <p style="margin-top:10px;">3,240 sqft multi-unit footprint situated on 5.92 private acres adjacent to Loveland; price cut by $10,000. Exceptional property for dual-unit long-term tenancy or rural lifestyle retreat with substantial land value.</p>
         </div>
     </div>
 
         <h2>Top 10 Events Near 45140</h2>
+        <h3 class="subsection">This Month (November 2026)</h3>
         <div class="grid">
         <div class="card">
-            <span class="badge">Community</span>
-            <h3><a href="https://lovelandoh.gov/CivicAlerts.aspx?AID=478" target="_blank" rel="noopener">Christmas Tree Lighting Festival</a></h3>
-            <p class="meta">📅 Saturday, December 5, 2026, 4:00 PM – 8:00 PM &nbsp;|&nbsp; 📍 Historic Downtown Loveland &amp; Nisbet Park, Loveland, OH</p>
-            <p>A charming, walkable hometown celebration featuring the lighting of the 60-foot tree and seasonal entertainment along the bike trail.</p>
-        </div>
-    
-        <div class="card">
-            <span class="badge">Community</span>
-            <h3><a href="https://lovinlifeloveland.com/events/" target="_blank" rel="noopener">Christmas in Loveland</a></h3>
-            <p class="meta">📅 Saturday, December 12, 2026, 2:00 PM – 6:00 PM &nbsp;|&nbsp; 📍 Railroad Avenue &amp; Historic Downtown, Loveland, OH</p>
-            <p>Perfect for a festive afternoon stroll with carriage rides, local artisan vendors, and dining in Loveland&#x27;s historic district.</p>
+            <span class="badge">Zoo/Aquarium</span>
+            <h3><a href="https://cincinnatizoo.org/events/festival-of-lights/" target="_blank" rel="noopener">44th Annual PNC Festival of Lights</a></h3>
+            <p class="meta">📅 Friday, November 27, 2026, 10:00 AM – 10:00 PM (Light display starts at 4:00 PM) &nbsp;|&nbsp; 📍 Cincinnati Zoo &amp; Botanical Garden, Cincinnati, OH</p>
+            <p>A quintessential Cincinnati holiday tradition featuring over 4 million twinkling LED lights and lake displays, perfect for an evening stroll.</p>
         </div>
     
         <div class="card">
             <span class="badge">Zoo/Aquarium</span>
-            <h3><a href="https://cincinnatizoo.org/events/festival-of-lights/" target="_blank" rel="noopener">PNC Festival of Lights</a></h3>
-            <p class="meta">📅 Daily through January 3, 2027, 4:00 PM – 10:00 PM &nbsp;|&nbsp; 📍 Cincinnati Zoo &amp; Botanical Garden, 3400 Vine St, Cincinnati, OH</p>
-            <p>A quintessential Cincinnati holiday tradition featuring 4 million LED lights, ideal for an evening walk and warm drinks.</p>
+            <h3><a href="https://www.google.com/search?q=Scuba+Santa%27s+Water+Wonderland+Newport+Aquarium%2C+Newport%2C+KY" target="_blank" rel="noopener">Scuba Santa&#x27;s Water Wonderland</a> <span class='search-tag'>[Search]</span></h3>
+            <p class="meta">📅 Friday, November 27, 2026, 10:00 AM – 5:00 PM &nbsp;|&nbsp; 📍 Newport Aquarium, Newport, KY</p>
+            <p>A fun, relaxed waterfront visit across the river showcasing festive aquarium decor, bubble shows, and close encounters with aquatic life.</p>
         </div>
     
         <div class="card">
-            <span class="badge">Zoo/Aquarium</span>
-            <h3><a href="https://www.newportaquarium.com/experience/events/scuba-santa/" target="_blank" rel="noopener">Scuba Santa&#x27;s Water Wonderland</a></h3>
-            <p class="meta">📅 Daily through December 24, 2026, 10:00 AM – 5:00 PM &nbsp;|&nbsp; 📍 Newport Aquarium, 1 Aquarium Way, Newport, KY</p>
-            <p>A relaxed, whimsical outing just across the river to enjoy holiday underwater displays and the new Coral Reef Tunnel.</p>
+            <span class="badge">Community</span>
+            <h3><a href="https://www.google.com/search?q=Servatii+Cincinnati+Christkindlmarkt+Schmidlapp+Event+Lawn+at+Smale+Riverfront+Park%2C+Cincinnati%2C+OH" target="_blank" rel="noopener">Servatii Cincinnati Christkindlmarkt</a> <span class='search-tag'>[Search]</span></h3>
+            <p class="meta">📅 Friday, November 27 – Sunday, November 29, 2026, 12:00 PM – 10:00 PM &nbsp;|&nbsp; 📍 Schmidlapp Event Lawn at Smale Riverfront Park, Cincinnati, OH</p>
+            <p>Enjoy authentic German-style open-air holiday market ambiance, hot spiced Glühwein, and scenic riverfront vistas with friends.</p>
         </div>
     
+        <div class="card">
+            <span class="badge">Comedy</span>
+            <h3><a href="https://www.improvcincinnati.com/shows" target="_blank" rel="noopener">Game Night Improv Comedy</a></h3>
+            <p class="meta">📅 Friday, November 27, 2026 at 4:30 PM &amp; 6:00 PM &nbsp;|&nbsp; 📍 Clifton Comedy Theatre, Cincinnati, OH</p>
+            <p>A cozy, intimate underground theater experience offering fast-paced, intelligent improv games that make for an easygoing date or night out.</p>
+        </div>
+    
+        <div class="card">
+            <span class="badge">Community</span>
+            <h3><a href="https://tourdecincinnati.com/weekend-rundown-november-22-24/" target="_blank" rel="noopener">Mad Hatter Holiday Celebration</a></h3>
+            <p class="meta">📅 Monday, November 30, 2026 at 6:00 PM &nbsp;|&nbsp; 📍 Ensemble Theatre Cincinnati, Over-the-Rhine, Cincinnati, OH</p>
+            <p>A whimsical community arts gathering in historic OTR featuring themed hospitality, costume fun, and local theatrical talent.</p>
+        </div>
+    </div>
+
+        <h3 class="subsection">Next Month (December 2026)</h3>
+        <div class="grid">
         <div class="card">
             <span class="badge">Museum</span>
-            <h3><a href="https://www.cincinnatiartmuseum.org/art/exhibitions/charley-harper/" target="_blank" rel="noopener">The Art of Charley Harper: Creatures Wild and Tame</a></h3>
-            <p class="meta">📅 Exhibition on view through March 7, 2027 (Tours Thursdays 6:30 PM) &nbsp;|&nbsp; 📍 Cincinnati Art Museum, 953 Eden Park Dr, Cincinnati, OH</p>
-            <p>An enriching cultural retrospective celebrating the mid-century modern naturalist art of a beloved local legend.</p>
+            <h3><a href="https://www.google.com/search?q=Holiday+Junction+Featuring+the+Duke+Energy+Holiday+Trains+Cincinnati+Museum+Center+at+Union+Terminal%2C+Cincinnati%2C+OH" target="_blank" rel="noopener">Holiday Junction Featuring the Duke Energy Holiday Trains</a> <span class='search-tag'>[Search]</span></h3>
+            <p class="meta">📅 Daily throughout December 2026, 10:00 AM – 5:00 PM &nbsp;|&nbsp; 📍 Cincinnati Museum Center at Union Terminal, Cincinnati, OH</p>
+            <p>A beloved local tradition celebrating historic model locomotive layouts inside Cincinnati&#x27;s architectural Art Deco masterpiece.</p>
         </div>
     
         <div class="card">
-            <span class="badge">Comedy</span>
-            <h3><a href="https://www.cincinnatiarts.org/events/detail/o-christmas-tea-2026" target="_blank" rel="noopener">O Christmas Tea: A British Comedy</a></h3>
-            <p class="meta">📅 November 27–29, 2026, Multiple Showtimes &nbsp;|&nbsp; 📍 Jarson-Kaplan Theater, Aronoff Center, Cincinnati, OH</p>
-            <p>An inventive, lighthearted Monty Python-style theatrical comedy offering smart, uplifting laughs for a night out.</p>
+            <span class="badge">Community</span>
+            <h3><a href="https://www.citybeat.com/arts/take-a-look-inside-the-2026-seasons-of-five-local-performing-arts-organizations/" target="_blank" rel="noopener">The Merry Wives of Windsor</a></h3>
+            <p class="meta">📅 Through Saturday, December 5, 2026 at 7:30 PM &nbsp;|&nbsp; 📍 Cincinnati Shakespeare Company, Cincinnati, OH</p>
+            <p>A classic, witty comedy staged in a sparkling winter wonderland setting, offering sophisticated culture in Downtown Cincinnati.</p>
         </div>
     
         <div class="card">
-            <span class="badge">Comedy</span>
-            <h3><a href="https://liberty.funnybone.com/" target="_blank" rel="noopener">Annie Lederman Live</a></h3>
-            <p class="meta">📅 November 27–28, 2026, 7:00 PM &amp; 9:15 PM &nbsp;|&nbsp; 📍 Cincinnati Funny Bone, Liberty Township, OH</p>
-            <p>Conveniently located near Loveland in Liberty Center, offering sharp, adult stand-up comedy and full dinner service.</p>
+            <span class="badge">Community</span>
+            <h3><a href="https://pendletonartcenter.com/pac-events/final-friday-december-13th-2024/" target="_blank" rel="noopener">Final Friday Open Studios Art Walk</a></h3>
+            <p class="meta">📅 Friday, December 13, 2026, 5:00 PM – 9:00 PM &nbsp;|&nbsp; 📍 Pendleton Art Center, Cincinnati, OH</p>
+            <p>Explore eight floors of working artist studios, meet regional painters and sculptors, and enjoy local food and wine pairings.</p>
         </div>
     
         <div class="card">
-            <span class="badge">Concert</span>
-            <h3><a href="https://tafttheatre.org/events/2026/12/big-bad-voodoo-daddy" target="_blank" rel="noopener">Big Bad Voodoo Daddy&#x27;s Wild &amp; Swingin&#x27; Holiday Party</a></h3>
-            <p class="meta">📅 Wednesday, December 2, 2026, 8:00 PM &nbsp;|&nbsp; 📍 Taft Theatre, 317 E 5th St, Cincinnati, OH</p>
-            <p>High-energy swing and big band jazz classics in a comfortable, historic theater setting suited for mature music lovers.</p>
+            <span class="badge">Zoo/Aquarium</span>
+            <h3><a href="https://www.google.com/search?q=Community+Night+at+Cincinnati+Zoo+Festival+of+Lights+Cincinnati+Zoo+%26+Botanical+Garden%2C+Cincinnati%2C+OH" target="_blank" rel="noopener">Community Night at Cincinnati Zoo Festival of Lights</a> <span class='search-tag'>[Search]</span></h3>
+            <p class="meta">📅 Saturday, December 19, 2026, 10:00 AM – 10:00 PM &nbsp;|&nbsp; 📍 Cincinnati Zoo &amp; Botanical Garden, Cincinnati, OH</p>
+            <p>A lively weekend gathering to experience evening animal lantern trails, holiday carolers, and seasonal warmth.</p>
         </div>
     
         <div class="card">
-            <span class="badge">Karaoke</span>
-            <h3><a href="https://twentymiletavern.com/" target="_blank" rel="noopener">Weekend Karaoke &amp; Craft Cocktails</a></h3>
-            <p class="meta">📅 Fridays &amp; Saturdays, 8:00 PM – Midnight &nbsp;|&nbsp; 📍 Twenty Mile Tavern, 3221 Montgomery Rd, Loveland, OH</p>
-            <p>A welcoming, low-pressure local neighborhood tavern right in Loveland to sing classic hits or relax with neighbors.</p>
-        </div>
-    
-        <div class="card">
-            <span class="badge">Real Estate</span>
-            <h3><a href="https://fienta.com/property-deal-network-cincinnati" target="_blank" rel="noopener">Cincinnati Real Estate Investor Meetup</a></h3>
-            <p class="meta">📅 Tuesday, December 8, 2026, 7:00 PM – 9:00 PM &nbsp;|&nbsp; 📍 Cobblestone OTR, 1132 Race St, Cincinnati, OH</p>
-            <p>Casual networking for experienced professionals and landlords looking to share local property leads without hard sales pitches.</p>
+            <span class="badge">Community</span>
+            <h3><a href="https://blog.altafiber.com/holiday-events-in-cincinnati-2024" target="_blank" rel="noopener">The North Pole Express Vintage Train Ride</a></h3>
+            <p class="meta">📅 Select dates throughout December 2026 &nbsp;|&nbsp; 📍 Lebanon Mason Monroe Railroad, Lebanon, OH</p>
+            <p>Located just minutes north of Loveland, this nostalgic heated rail journey offers scenic winter travel through historic Warren County.</p>
         </div>
     </div>
     </div>
