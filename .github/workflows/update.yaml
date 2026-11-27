@@ -2,8 +2,8 @@ name: Update Daily Digest
 
 on:
   schedule:
-    - cron: '0 */4 * * *' # Runs every 4 hours (UTC)
-  workflow_dispatch:      # Allows manual runs anytime
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,7 +20,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        pip install google-genai
+        run: pip install google-genai
 
       - name: Generate updated HTML
         env:
