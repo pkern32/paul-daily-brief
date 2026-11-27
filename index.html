@@ -6,13 +6,13 @@
     <title>Paul's Daily Brief</title>
     <style>
         :root {
-            --bg: #090d16;
-            --card: #111827;
-            --text: #f8fafc;
-            --muted: #93c5fd;
-            --accent: #60a5fa;
-            --link: #7dd3fc;
-            --border: #1e3a8a;
+            --bg: #0c0d10;
+            --card: #16181d;
+            --text: #f3f4f6;
+            --muted: #9ca3af;
+            --accent: #d1d5db;
+            --link: #e5e7eb;
+            --border: #2a2e37;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -24,7 +24,7 @@
         }
         .container { max-width: 960px; margin: 0 auto; }
         header {
-            border-bottom: 2px solid var(--accent);
+            border-bottom: 2px solid var(--border);
             padding-bottom: 16px;
             margin-bottom: 24px;
         }
@@ -38,13 +38,24 @@
             border-bottom: 1px solid var(--border);
             padding: 18px 22px;
             border-radius: 8px;
-            margin-bottom: 28px;
+            margin-bottom: 22px;
         }
         .quote-box blockquote { margin: 0 0 8px 0; font-size: 1.1rem; font-style: italic; color: var(--text); }
         .quote-box cite { color: var(--muted); font-size: 0.9rem; }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        .calendar-grid h2 {
+            margin-top: 8px;
+            margin-bottom: 10px;
+            font-size: 1.15rem;
+        }
         h2 {
             margin-top: 32px;
-            border-bottom: 1px solid var(--accent);
+            border-bottom: 1px solid var(--border);
             padding-bottom: 6px;
             color: var(--accent);
         }
@@ -66,6 +77,26 @@
             margin-bottom: 12px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
         }
+        li.calendar-item, li.event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            line-height: 1.35;
+        }
+        .cal-title {
+            font-weight: 600;
+            color: var(--text);
+        }
+        .cal-time, .event-time {
+            margin-right: 0;
+            white-space: nowrap;
+            font-size: 0.72rem;
+        }
         li.list-item p { margin: 6px 0 0 0; font-size: 0.95rem; color: var(--text); }
         .team-title {
             display: inline-flex;
@@ -75,13 +106,17 @@
             color: var(--text);
         }
         .team-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 4px;
             flex-shrink: 0;
             display: block;
         }
         .meta-line { margin-top: 6px; }
         .team-headline {
-            background: #172554;
-            border: 1px solid #1d4ed8;
+            background: #1f222a;
+            border: 1px solid #373c47;
             padding: 8px 10px;
             border-radius: 6px;
             margin-top: 8px !important;
@@ -91,9 +126,9 @@
         .row-between { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
         .badge {
             display: inline-block;
-            background: #172554;
+            background: #22262f;
             color: var(--muted);
-            border: 1px solid #1e40af;
+            border: 1px solid #373c47;
             font-size: 0.75rem;
             font-weight: 600;
             padding: 2px 8px;
@@ -101,8 +136,8 @@
             margin-right: 4px;
         }
         .deal-badge {
-            background: #1e3a8a;
-            color: #ffffff;
+            background: #2c313c;
+            color: var(--text);
         }
         .search-tag {
             font-size: 0.75rem;
@@ -120,247 +155,225 @@
     <div class="container">
         <header>
             <h1>Paul's Daily Brief</h1>
-            <div class="updated">Last refreshed: Friday, November 27, 2026 at 06:18 PM EST &bull; Auto-updates every 4 hours</div>
+            <div class="updated">Last refreshed: Friday, November 27, 2026 at 06:41 PM EST &bull; Auto-updates every 4 hours</div>
         </header>
 
         <section class="quote-box">
             <blockquote>&ldquo;The reality is that you will grieve forever. You will not &#x27;get over&#x27; the loss of a loved one; you will learn to live with it. You will heal and you will rebuild yourself around the loss you have suffered. You will be whole again but you will never be the same. Nor should you be the same nor would you want to.&rdquo;</blockquote>
-            <cite>&mdash; <a href="https://www.google.com/search?q=Elisabeth+K%C3%BCbler-Ross+and+David+Kessler+quote" target="_blank" rel="noopener">Elisabeth Kübler-Ross and David Kessler</a> <span class='search-tag'>[Search]</span></cite>
+            <cite>&mdash; <a href="https://www.goodreads.com/quotes/442107-the-reality-is-that-you-will-grieve-forever-you-will" target="_blank" rel="noopener">Elisabeth Kübler-Ross and David Kessler</a></cite>
         </section>
 
-        <h2>Today's Calendar</h2>
-        <ul class="item-list">
-        <li class="list-item">
-            <div class="row-between">
-                <strong>Paul Work Holiday</strong>
-                <span class="badge">All Day (Nov 26–27)</span>
-            </div>
-            <p class="meta">Calendar: Personal</p>
+        <div class="calendar-grid">
+            <div>
+                <h2>Today's Calendar</h2>
+                <ul class="item-list">
+        <li class="list-item calendar-item">
+            <span class="cal-title">Paul Work Holiday</span>
+            <span class="badge cal-time">All Day (Nov 26–27)</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong>Marketplace pickup slack line $15</strong>
-                <span class="badge">12:00 PM – 12:30 PM EST</span>
-            </div>
-            <p class="meta">Calendar: Personal</p>
+        <li class="list-item calendar-item">
+            <span class="cal-title">Marketplace pickup slack line $15</span>
+            <span class="badge cal-time">12:00 PM – 12:30 PM EST</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong>Eli no school</strong>
-                <span class="badge">All Day (Nov 23–27)</span>
-            </div>
-            <p class="meta">Calendar: Parenting schedule</p>
+        <li class="list-item calendar-item">
+            <span class="cal-title">Eli no school</span>
+            <span class="badge cal-time">All Day (Nov 23–27)</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong>Lauren Thanksgiving break</strong>
-                <span class="badge">All Day (Nov 25–27)</span>
-            </div>
-            <p class="meta">Calendar: Parenting schedule</p>
+        <li class="list-item calendar-item">
+            <span class="cal-title">Lauren Thanksgiving break</span>
+            <span class="badge cal-time">All Day (Nov 25–27)</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong>Isaac/Tracy-Vegas</strong>
-                <span class="badge">All Day (Nov 27–Dec 1)</span>
-            </div>
-            <p class="meta">Calendar: Parenting schedule</p>
+        <li class="list-item calendar-item">
+            <span class="cal-title">Isaac/Tracy-Vegas</span>
+            <span class="badge cal-time">All Day (Nov 27–Dec 1)</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong>Isaac</strong>
-                <span class="badge">Ongoing through 2:00 PM EST</span>
-            </div>
-            <p class="meta">Calendar: Parenting schedule</p>
+        <li class="list-item calendar-item">
+            <span class="cal-title">Isaac</span>
+            <span class="badge cal-time">Ongoing through 2:00 PM EST</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong>Sarah</strong>
-                <span class="badge">2:00 PM EST – Nov 30, 2:00 PM EST</span>
-            </div>
-            <p class="meta">Calendar: Parenting schedule</p>
+        <li class="list-item calendar-item">
+            <span class="cal-title">Sarah</span>
+            <span class="badge cal-time">2:00 PM EST – Nov 30, 2:00 PM EST</span>
         </li>
     </ul>
-
-        <h2>Tomorrow's Calendar</h2>
-        <ul class="item-list">
-        <li class="list-item">
-            <div class="row-between">
-                <strong>Eli lifeguard certification</strong>
-                <span class="badge">9:00 AM – 4:00 PM EST</span>
             </div>
-            <p class="meta">Calendar: Parenting schedule</p>
+            <div>
+                <h2>Tomorrow's Calendar</h2>
+                <ul class="item-list">
+        <li class="list-item calendar-item">
+            <span class="cal-title">Eli lifeguard certification</span>
+            <span class="badge cal-time">9:00 AM – 4:00 PM EST</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong>Thanksgiving @ Pfarr</strong>
-                <span class="badge">5:00 PM – 8:00 PM EST</span>
-            </div>
-            <p class="meta">Calendar: Kern Kids Calendar / Parenting schedule</p>
+        <li class="list-item calendar-item">
+            <span class="cal-title">Thanksgiving @ Pfarr</span>
+            <span class="badge cal-time">5:00 PM – 8:00 PM EST</span>
         </li>
     </ul>
+            </div>
+        </div>
 
         <h2>Minnesota Pro Sports</h2>
         <ul class="item-list">
         <li class="list-item">
             <div class="row-between">
-                <div class="team-title"><svg class="team-logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#0f172a" stroke="#60a5fa" stroke-width="2"/><polygon points="16,7 25,16 16,25 7,16" fill="#2563eb" stroke="#ffffff" stroke-width="1.5"/></svg><strong>Minnesota Timberwolves</strong></div>
+                <div class="team-title"><img class="team-logo" src="https://a.espncdn.com/i/teamlogos/nfl/500/min.png" alt="Minnesota Vikings official logo" width="28" height="28" loading="lazy"><strong>Minnesota Vikings</strong></div>
                 <span class="badge">In-Season</span>
             </div>
             <p class="team-headline">
-                <strong>Top Headline:</strong> <a href="https://www.espn.com/nba/story/_/id/47880753/inside-ugly-5-year-split-jonathan-kuminga-warriors" target="_blank" rel="noopener">Timberwolves Hold Off Thunder Behind Clutch Scoring to Secure Fourth Straight Win</a>
-                <span class="source">(Sports Illustrated)</span>
+                <strong>Top Headline:</strong> <a href="https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/minnesota-vikings" target="_blank" rel="noopener">Head Coach Kevin O&#x27;Connell Evaluates Vikings Roster Depth and Defensive Resilience Ahead of Week 13</a>
+                <span class="source">(NBC Sports)</span>
+            </p>
+            <p><strong>Final:</strong> Vikings 30 - Packers 10 &mdash; <a href="https://www.espn.com/nfl/boxscore/_/gameId/401873077" target="_blank" rel="noopener">ESPN Box Score &rarr;</a></p>
+            <p><strong>Top Performers:</strong> Brian Flores&#x27; defense recorded 8 sacks and 12 quarterback pressures while holding Green Bay to just 10 points.</p>
+            <p class="meta"><strong>Next Game:</strong> Carolina Panthers, Sunday, Nov 29, 2026, 1:00 PM (ET) &bull; <a href="https://www.espn.com/nfl/schedule/_/week/8/year/2026/seasontype/2" target="_blank" rel="noopener">Schedule</a></p>
+        </li>
+    
+        <li class="list-item">
+            <div class="row-between">
+                <div class="team-title"><img class="team-logo" src="https://a.espncdn.com/i/teamlogos/nba/500/min.png" alt="Minnesota Timberwolves official logo" width="28" height="28" loading="lazy"><strong>Minnesota Timberwolves</strong></div>
+                <span class="badge">In-Season</span>
+            </div>
+            <p class="team-headline">
+                <strong>Top Headline:</strong> <a href="https://www.foxsports.com/nba/minnesota-timberwolves-team" target="_blank" rel="noopener">Timberwolves Improve to 3-0 in NBA Cup Play With 113-106 Victory Over Thunder</a>
+                <span class="source">(FOX Sports)</span>
             </p>
             <p><strong>Final:</strong> Timberwolves 113 - Thunder 106 &mdash; <a href="https://www.espn.com/nba/boxscore/_/gameId/401909320" target="_blank" rel="noopener">ESPN Box Score &rarr;</a></p>
-            <p><strong>Top Performers:</strong> Jaden McDaniels: 32 pts (11-15 FG, 4-5 3Pt), 10 reb, 5 ast; Ayo Dosunmu: 5 clutch late points.</p>
-            <p class="meta"><strong>Next Game:</strong> vs Sacramento Kings, Nov 29, 2026, 6:00 PM (ET) &bull; <a href="https://www.espn.com/nba/team/roster/_/name/min/minnesota-timberwolves" target="_blank" rel="noopener">Schedule</a></p>
+            <p><strong>Top Performers:</strong> Jaden McDaniels scored 32 points with 10 rebounds; LaMelo Ball recorded 19 points, 7 rebounds, and 8 assists.</p>
+            <p class="meta"><strong>Next Game:</strong> Memphis Grizzlies, Friday, Nov 27, 2026, 8:30 PM (ET) &bull; <a href="https://www.espn.com/nba/scoreboard" target="_blank" rel="noopener">Schedule</a></p>
         </li>
     
         <li class="list-item">
             <div class="row-between">
-                <div class="team-title"><svg class="team-logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="6" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2"/><path d="M8 9 L16 24 L24 9 L19.5 9 L16 16.5 L12.5 9 Z" fill="#ffffff"/></svg><strong>Minnesota Vikings</strong></div>
+                <div class="team-title"><img class="team-logo" src="https://a.espncdn.com/i/teamlogos/nhl/500/min.png" alt="Minnesota Wild official logo" width="28" height="28" loading="lazy"><strong>Minnesota Wild</strong></div>
                 <span class="badge">In-Season</span>
             </div>
             <p class="team-headline">
-                <strong>Top Headline:</strong> <a href="https://www.espn.com/nfl/story/_/id/34732117/inside-kelly-kleine-football-journey-vikings-broncos" target="_blank" rel="noopener">Vikings Prepare Offensive Scheme Ahead of Key NFC Playoff Positioning Stretch</a>
-                <span class="source">(ESPN)</span>
+                <strong>Top Headline:</strong> <a href="https://www.youtube.com/watch?v=DH7PwFBBdKM" target="_blank" rel="noopener">Minnesota Wild Navigate Demanding Western Road Slate Behind Steady Early Offensive Output</a>
+                <span class="source">(ESPN NHL)</span>
             </p>
-            <p><strong>Final:</strong> Vikings 24 - Bears 17 &mdash; <a href="https://www.espn.com/nfl/boxscore/_/gameId/401873077" target="_blank" rel="noopener">ESPN Box Score &rarr;</a></p>
-            <p><strong>Top Performers:</strong> Justin Jefferson: 8 rec, 98 yds; Jordan Addison: 7 rec, 112 yds, 1 TD.</p>
-            <p class="meta"><strong>Next Game:</strong> vs Atlanta Falcons, Dec 6, 2026, 1:00 PM (ET) &bull; <a href="https://www.espn.com/nfl/game/_/gameId/401872927/packers-vikings" target="_blank" rel="noopener">Schedule</a></p>
+            <p><strong>Final:</strong> Panthers 4 - Wild 3 (OT) &mdash; <a href="https://www.espn.com/nhl/boxscore/_/gameId/401892791" target="_blank" rel="noopener">ESPN Box Score &rarr;</a></p>
+            <p><strong>Top Performers:</strong> Kirill Kaprizov and Matt Boldy each posted multi-point efforts to earn a road point in sudden-death overtime.</p>
+            <p class="meta"><strong>Next Game:</strong> Calgary Flames, Friday, Nov 27, 2026, 4:00 PM (ET) &bull; <a href="https://www.espn.com/nhl/team/schedule/_/name/wpg/seasontype/2" target="_blank" rel="noopener">Schedule</a></p>
         </li>
     
         <li class="list-item">
             <div class="row-between">
-                <div class="team-title"><svg class="team-logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><polygon points="16,3 28,10 28,22 16,29 4,22 4,10" fill="#1e40af" stroke="#60a5fa" stroke-width="2"/><polygon points="16,8 22,19 10,19" fill="#ffffff"/></svg><strong>Minnesota Wild</strong></div>
-                <span class="badge">In-Season</span>
-            </div>
-            <p class="team-headline">
-                <strong>Top Headline:</strong> <a href="https://www.espn.com/nhl/story/_/id/45319295/team-usa" target="_blank" rel="noopener">Wild Anchor Defensive Structure in Crowded Western Conference Standings</a>
-                <span class="source">(The Hockey Writers)</span>
-            </p>
-            <p><strong>Final:</strong> Wild 3 - Blackhawks 2 &mdash; <a href="https://www.espn.com/nhl/boxscore/_/gameId/401892791" target="_blank" rel="noopener">ESPN Box Score &rarr;</a></p>
-            <p><strong>Top Performers:</strong> Kirill Kaprizov: 1 goal, 1 assist; Filip Gustavsson: 28 saves on 30 shots.</p>
-            <p class="meta"><strong>Next Game:</strong> vs Tampa Bay Lightning, Nov 28, 2026, 8:00 PM (ET) &bull; <a href="https://www.espn.com/nhl/game/_/gameId/401891816/wild-predators" target="_blank" rel="noopener">Schedule</a></p>
-        </li>
-    
-        <li class="list-item">
-            <div class="row-between">
-                <div class="team-title"><svg class="team-logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2"/><text x="16" y="20" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700" font-family="sans-serif">MIN</text></svg><strong>Minnesota Twins</strong></div>
+                <div class="team-title"><img class="team-logo" src="https://a.espncdn.com/i/teamlogos/mlb/500/min.png" alt="Minnesota Twins official logo" width="28" height="28" loading="lazy"><strong>Minnesota Twins</strong></div>
                 <span class="badge">Offseason</span>
             </div>
             <p class="team-headline">
-                <strong>Top Headline:</strong> <a href="https://www.espn.com/mlb/story/_/id/44557313/rob-manfred-praises-torpedo-bats-absolutely-good-mlb" target="_blank" rel="noopener">Twins Evaluate Winter Roster Rebuilding and Bullpen Targets Heading Into 2027</a>
-                <span class="source">(ESPN)</span>
+                <strong>Top Headline:</strong> <a href="https://espnsiouxfalls.com/sonny-gray-fa-minnesota-twins/" target="_blank" rel="noopener">Minnesota Twins Reunite With Veteran Right-Hander Sonny Gray on Two-Year Deal</a>
+                <span class="source">(ESPN Sioux Falls)</span>
             </p>
-            <p><strong>Final:</strong> Offseason - Concluded 2026 Major League Baseball regular season &mdash; <a href="https://www.espn.com/mlb/team/_/name/min/minnesota-twins" target="_blank" rel="noopener">ESPN Box Score &rarr;</a></p>
-            <p><strong>Top Performers:</strong> Carlos Correa: .310 AVG, 14 HR; Pablo López: 15 wins, 2.80 ERA.</p>
-            <p class="meta"><strong>Next Game:</strong> Spring Training vs Boston Red Sox, Feb 2027 &bull; <a href="https://www.espn.com/mlb/story/_/id/31535124/atlanta-braves-star-marcell-ozuna-arrested-charged-aggravated-assault-strangulation-misdemeanor-battery-family-violence" target="_blank" rel="noopener">Schedule</a></p>
+            <p><strong>Final:</strong> Offseason (Season Finale: Twins 11 - Yankees 4) &mdash; <a href="https://www.espn.com/mlb/boxscore/_/gameId/401816017" target="_blank" rel="noopener">ESPN Box Score &rarr;</a></p>
+            <p><strong>Top Performers:</strong> Josh Bell hit 2 home runs with 5 RBIs; Marco Raya tossed 2 scoreless innings of relief to secure the win.</p>
+            <p class="meta"><strong>Next Game:</strong> Spring Training Opener vs. Boston Red Sox, February 2027 &bull; <a href="https://www.espn.com/mlb/team/schedule/_/name/min" target="_blank" rel="noopener">Schedule</a></p>
         </li>
     </ul>
 
         <h2>Top 5 Sports Headlines (ESPN)</h2>
         <ul class="item-list">
         <li class="list-item">
-            <strong><a href="https://www.espn.com/nba/story/_/id/49350739/inside-hopeful-resurrection-chicago-bulls-six-years-stasis" target="_blank" rel="noopener">Inside the Hopeful Resurrection of the Chicago Bulls After Years of Stasis</a></strong>
+            <strong><a href="https://www.espn.com/nfl/story/_/id/50500352/patriots-qb-drake-maye-leg-miss-extended-sources-say" target="_blank" rel="noopener">Patriots QB Drake Maye Faces Extended Absence Following Significant Lower Leg Injury</a></strong>
             <span class="source">(ESPN)</span>
-            <p>ESPN investigates how the Chicago Bulls restructured front office leadership and draft capital to alter their competitive trajectory. The detailed piece outlines why organizational executives view this developmental cycle as fundamentally different from prior rebuilding attempts.</p>
+            <p>New England Patriots rookie starter Drake Maye is expected to miss an extended period after suffering a lower leg injury in recent action. The team is conducting further imaging to determine whether Maye will be able to return before the conclusion of the regular season.</p>
         </li>
     
         <li class="list-item">
-            <strong><a href="https://www.espn.com/nba/story/_/id/47880753/inside-ugly-5-year-split-jonathan-kuminga-warriors" target="_blank" rel="noopener">Inside the Five-Year Split Between Jonathan Kuminga and the Golden State Warriors</a></strong>
+            <strong><a href="https://www.espn.com/nhl/story/_/id/49886334/barry-melrose-former-player-coach-espn-analyst-dies" target="_blank" rel="noopener">Beloved Longtime Coach and ESPN Hockey Analyst Barry Melrose Dies</a></strong>
             <span class="source">(ESPN)</span>
-            <p>ESPN examines the internal dynamics and divergent expectations that culminated in Jonathan Kuminga&#x27;s departure from Golden State. The report sheds light on rotational disputes and developmental hurdles across five transformative seasons.</p>
+            <p>Former NHL player and head coach Barry Melrose, who spent decades as a fixture of ESPN&#x27;s national hockey coverage, has passed away. Melrose was widely celebrated across sports broadcasting for his charismatic analysis and lifelong dedication to the NHL community.</p>
         </li>
     
         <li class="list-item">
-            <strong><a href="https://www.espn.com/college-football/story/_/id/47167883/jmu-chesney-expected-sign-5-year-deal-ucla" target="_blank" rel="noopener">UCLA Football Secures Head Coach Bob Chesney on Long-Term Agreement</a></strong>
+            <strong><a href="https://www.espn.com/nba/story/_/id/49743440/raptors-making-kyle-lowry-7-their-second-retired-number" target="_blank" rel="noopener">Toronto Raptors Announce Retirement of Kyle Lowry&#x27;s No. 7 Jersey</a></strong>
             <span class="source">(ESPN)</span>
-            <p>ESPN reports on the hiring of coach Bob Chesney as UCLA completes a multi-year contract to stabilize its football program in Big Ten competition. The decision concludes an aggressive coaching search aimed at elevating program recruiting and culture.</p>
+            <p>The Toronto Raptors have confirmed they will retire Kyle Lowry&#x27;s No. 7 jersey in an upcoming postgame ceremony at Scotiabank Arena. Lowry becomes only the second player in franchise history to receive the honor following his leadership in their 2019 title run.</p>
         </li>
     
         <li class="list-item">
-            <strong><a href="https://www.espn.com/college-football/story/_/id/47634009/ucla-bruins-college-football-coach-bob-chesney-coal-miner-bartender" target="_blank" rel="noopener">From Blue-Collar Roots to Major College Sidelines: The Journey of Bob Chesney</a></strong>
+            <strong><a href="https://www.espn.com/nba/story/_/id/49350739/inside-hopeful-resurrection-chicago-bulls-six-years-stasis" target="_blank" rel="noopener">Inside the Chicago Bulls&#x27; New Strategic Era and Roster Rebuilding Vision</a></strong>
             <span class="source">(ESPN)</span>
-            <p>ESPN chronicles the rise of collegiate coach Bob Chesney through grassroots coaching ranks and lower divisions into major conference football. The profile illustrates how relentless fundamentals and personal resilience molded his coaching philosophy.</p>
+            <p>ESPN takes an in-depth look at how the Chicago Bulls&#x27; revamped front office and coaching staff are constructing their new team identity. After several years of stagnant playoff contention, the organization is pivoting toward younger core pieces and long-term cap flexibility.</p>
         </li>
     
         <li class="list-item">
-            <strong><a href="https://www.espn.com/nhl/story/_/id/49153976/oilers-name-mike-babcock-head-coach-nhl-clears-way" target="_blank" rel="noopener">Edmonton Oilers Appoint Mike Babcock Following League Clearance</a></strong>
+            <strong><a href="https://www.espn.com/nba/story/_/id/49650138/nba-predictions-2026-27expert-picks-predictions-western-eastern-conference-finals-champions" target="_blank" rel="noopener">NBA Insiders Project Conference Champions and Finals Frontrunners for 2026-27</a></strong>
             <span class="source">(ESPN)</span>
-            <p>ESPN breaks down the Oilers&#x27; decision to install veteran bench boss Mike Babcock following NHL administrative approval. The story evaluates locker room reception, leadership philosophies, and Stanley Cup expectations in Edmonton.</p>
+            <p>ESPN&#x27;s NBA panel releases comprehensive mid-autumn projections evaluating conference finals contenders and championship odds across both divisions. The analysis highlights newly configured rosters and key early-season performance metrics shaping the playoff race.</p>
         </li>
     </ul>
 
         <h2>Top 5 Local News (45140 / Greater Cincinnati)</h2>
         <ul class="item-list">
         <li class="list-item">
-            <strong><a href="https://lovinlifeloveland.com/events/christmas-tree-lighting-festival/" target="_blank" rel="noopener">Loveland Named One of Ohio Magazine&#x27;s Best Hometowns for 2026–2027</a></strong>
-            <span class="source">(Loveland Local News)</span>
-            <p>Statewide editors selected the City of Loveland as one of Ohio Magazine&#x27;s Best Hometowns for the upcoming year, spotlighting its historic downtown and bustling bike trail. Community leaders will formally receive the honor during downtown holiday festival ceremonies.</p>
-        </li>
-    
-        <li class="list-item">
-            <strong><a href="https://www.google.com/search?q=Hippo+Cove+Reopens+at+Cincinnati+Zoo+Following+Safety+Upgrades+and+Memorial+Tributes+Associated+Press" target="_blank" rel="noopener">Hippo Cove Reopens at Cincinnati Zoo Following Safety Upgrades and Memorial Tributes</a> <span class='search-tag'>[Search]</span></strong>
-            <span class="source">(Associated Press)</span>
-            <p>The Cincinnati Zoo &amp; Botanical Garden reopened its popular Hippo Cove habitat with upgraded protective barrier measures after mourning the loss of Fiona. Zoo directors stated the adjustments prioritize safety while preserving intimate viewing experiences for visitors.</p>
-        </li>
-    
-        <li class="list-item">
-            <strong><a href="https://www.google.com/search?q=Hamilton+County+Board+of+Elections+Finalizes+Official+2026+Vote+Canvass+Loveland+Local+News" target="_blank" rel="noopener">Hamilton County Board of Elections Finalizes Official 2026 Vote Canvass</a> <span class='search-tag'>[Search]</span></strong>
-            <span class="source">(Loveland Local News)</span>
-            <p>Election officials completed the formal certification of ballots cast across Hamilton County and municipal districts including Loveland. Local turnout metrics showed consistent community participation in civic referendums and school district seats.</p>
-        </li>
-    
-        <li class="list-item">
-            <strong><a href="https://www.wvxu.org/local-news" target="_blank" rel="noopener">Brent Spence Companion Bridge Construction Reaches Key Foundation Phase</a></strong>
+            <strong><a href="https://www.wvxu.org/local-news/2026-05-27/key-crane-for-brent-spence-companion-construction-making-its-way-to-cincinnati-via-barge" target="_blank" rel="noopener">Construction Advances on Multi-Billion Dollar Brent Spence Companion Bridge Corridor</a></strong>
             <span class="source">(WVXU)</span>
-            <p>Regional highway administrators reported significant milestones in groundwork and support structures for the Brent Spence companion bridge project over the Ohio River. The infrastructure work remains on track to relieve long-standing bottleneck delays for regional commuters.</p>
+            <p>Work on the $4.4 billion Brent Spence companion bridge project across the Ohio River is shifting into heavy construction, with specialized maritime cranes and equipment arriving via barge. Transportation officials from Ohio and Kentucky are coordinating lane and ramp configurations designed to maintain interstate flow throughout the multi-year build.</p>
         </li>
     
         <li class="list-item">
-            <strong><a href="https://www.google.com/search?q=OKI+Regional+Council+Evaluates+Transit+Connectivity+Along+Historic+Railway+Corridors+WVXU" target="_blank" rel="noopener">OKI Regional Council Evaluates Transit Connectivity Along Historic Railway Corridors</a> <span class='search-tag'>[Search]</span></strong>
+            <strong><a href="https://www.lovelandoh.gov/?nid=1&amp;mobile=ON" target="_blank" rel="noopener">City of Loveland Installs Scenic Photo Stations and Advances Local Capital Projects</a></strong>
+            <span class="source">(Loveland Local News)</span>
+            <p>The City of Loveland and its Tree &amp; Environment Committee have completed new scenic photo stations along the Little Miami corridor to highlight local nature and downtown attractions. The city council also reviewed upcoming capital infrastructure milestones, including downtown sidewalk improvements and automated bike trail crossings.</p>
+        </li>
+    
+        <li class="list-item">
+            <strong><a href="https://www.wvxu.org/2026-11-03/northeast-ohio-schools-see-mixed-levy-results-as-voters-cost-of-living-concerns-persist" target="_blank" rel="noopener">Southwest Ohio School Districts Navigate Budget Planning After Ballot Levy Decisions</a></strong>
             <span class="source">(WVXU)</span>
-            <p>Urban planners with the Ohio-Kentucky-Indiana Regional Council conducted extensive assessments on multimodal connectivity for suburban Cincinnati communities. Public feedback indicated strong enthusiasm for integrating pedestrian trails and regional transportation corridors.</p>
+            <p>Following the November general election, educational administrators across southwest and northeast Ohio are facing budget constraints as only a fraction of proposed school tax increases won voter approval. School boards are re-evaluating long-term capital plans and operational budgets in response to heightened voter sensitivity surrounding property valuations.</p>
+        </li>
+    
+        <li class="list-item">
+            <strong><a href="https://www.newsbreak.com/kix-country-341419347/5018105861798-loveland-welcomes-back-renewed-4th-street-clock" target="_blank" rel="noopener">Historic Fourth Street Clock Restored and Reinstalled in Downtown Loveland</a></strong>
+            <span class="source">(Loveland Magazine)</span>
+            <p>Loveland&#x27;s iconic Fourth Street civic clock has been officially reinstalled and unveiled to the public after undergoing comprehensive mechanical and aesthetic restoration. The project marks another completed step in the historic district&#x27;s ongoing streetscape and infrastructure beautification program.</p>
+        </li>
+    
+        <li class="list-item">
+            <strong><a href="https://www.wvxu.org/local-news/2025-01-28/kytc-jim-gray-brent-spence-bridge-timeline" target="_blank" rel="noopener">Over 660,000 Greater Cincinnati Residents Travel for Thanksgiving Holiday Weekend</a></strong>
+            <span class="source">(WVXU)</span>
+            <p>Over 660,000 residents across the Greater Cincinnati metropolitan area traveled over the Thanksgiving holiday weekend, according to regional transit and airport authorities. Cincinnati/Northern Kentucky International Airport reported high passenger throughput, bolstered by increased nonstop routes and smooth terminal operations.</p>
         </li>
     </ul>
 
         <h2>Top 5 National News (Neutral Sources)</h2>
         <ul class="item-list">
         <li class="list-item">
-            <strong><a href="https://www.google.com/search?q=Federal+Appeals+Court+Rejects+Challenge+to+California+Mail-In+Ballot+Procedures+Associated+Press" target="_blank" rel="noopener">Federal Appeals Court Rejects Challenge to California Mail-In Ballot Procedures</a> <span class='search-tag'>[Search]</span></strong>
+            <strong><a href="https://www.google.com/search?q=Wall+Street+Records+Best+Week+in+Over+a+Year+With+Broad+Friday+Gains+Associated+Press" target="_blank" rel="noopener">Wall Street Records Best Week in Over a Year With Broad Friday Gains</a> <span class='search-tag'>[Search]</span></strong>
             <span class="source">(Associated Press)</span>
-            <p>A federal appellate panel upheld the dismissal of a lawsuit challenging the tabulation and processing rules of tens of thousands of California election ballots. The court affirmed that state election administrators complied fully with established statutory guidelines.</p>
+            <p>Major U.S. stock benchmarks rallied Friday as the S&amp;P 500 rose 1.6% to log a 5.6% weekly advance, marking Wall Street&#x27;s strongest weekly gain since early 2025. Broad-based advances across tech and consumer sectors helped steady markets after several volatile trading sessions preceding Thanksgiving.</p>
         </li>
     
         <li class="list-item">
-            <strong><a href="https://www.google.com/search?q=New+York+Court+of+Appeals+Rejects+Social+Media+Liability+Claims+in+Mass+Shooting+Case+Associated+Press" target="_blank" rel="noopener">New York Court of Appeals Rejects Social Media Liability Claims in Mass Shooting Case</a> <span class='search-tag'>[Search]</span></strong>
+            <strong><a href="https://www.google.com/search?q=Retailers+See+Resilient+Black+Friday+Traffic+as+Shoppers+Pursue+Deep+Discounts+Associated+Press" target="_blank" rel="noopener">Retailers See Resilient Black Friday Traffic as Shoppers Pursue Deep Discounts</a> <span class='search-tag'>[Search]</span></strong>
             <span class="source">(Associated Press)</span>
-            <p>New York&#x27;s highest court ruled that social media corporations cannot be held civilly liable under common-law negligence for a mass shooting in Buffalo. Judges concluded that modifying product liability standards to cover content delivery algorithms remains a legislative responsibility.</p>
+            <p>Millions of American shoppers flocked to brick-and-mortar storefronts and digital marketplaces on Black Friday to capitalize on steep early holiday discounts. Retail analysts noted that despite ongoing household cost sensitivity, promotional discounts drove steady foot traffic and resilient consumer spending.</p>
         </li>
     
         <li class="list-item">
-            <strong><a href="https://www.google.com/search?q=U.S.+Aviation+Officials+Monitor+Record+Thanksgiving+Travel+Demand+Amid+Smooth+Operations+NPR" target="_blank" rel="noopener">U.S. Aviation Officials Monitor Record Thanksgiving Travel Demand Amid Smooth Operations</a> <span class='search-tag'>[Search]</span></strong>
-            <span class="source">(NPR)</span>
-            <p>Federal transportation agencies reported orderly operations across major airport hubs nationwide despite unprecedented Thanksgiving holiday passenger volumes. Federal aviation personnel credited updated radar communication systems and weather mitigation protocols for minimizing delays.</p>
-        </li>
-    
-        <li class="list-item">
-            <strong><a href="https://www.google.com/search?q=Retailers+Pivot+to+Strategic+Holiday+Discounts+Amid+Pragmatic+Consumer+Spending+Marketplace" target="_blank" rel="noopener">Retailers Pivot to Strategic Holiday Discounts Amid Pragmatic Consumer Spending</a> <span class='search-tag'>[Search]</span></strong>
-            <span class="source">(Marketplace)</span>
-            <p>Retail economic indicators show major retailers extending Black Friday bargains throughout the Thanksgiving weekend to attract value-conscious consumers. Market economists noted that shoppers are demonstrating restraint and focusing primarily on household staples and essentials.</p>
-        </li>
-    
-        <li class="list-item">
-            <strong><a href="https://www.google.com/search?q=Federal+Court+Intervenes+in+Regulatory+Inquiries+Over+Media+Free+Speech+Protections+Associated+Press" target="_blank" rel="noopener">Federal Court Intervenes in Regulatory Inquiries Over Media Free Speech Protections</a> <span class='search-tag'>[Search]</span></strong>
+            <strong><a href="https://www.google.com/search?q=U.S.+Military+Intercepts+and+Disables+Merchant+Ship+Attempting+to+Breach+Blockade+Associated+Press" target="_blank" rel="noopener">U.S. Military Intercepts and Disables Merchant Ship Attempting to Breach Blockade</a> <span class='search-tag'>[Search]</span></strong>
             <span class="source">(Associated Press)</span>
-            <p>A federal judge issued an emergency stay barring government regulators from pursuing administrative license challenges against national broadcasting companies. The court concluded that administrative scrutiny of network reporting risks chilling constitutionally guaranteed free speech.</p>
+            <p>The United States military announced it disabled a commercial merchant ship attempting to bypass an international maritime blockade of Iranian ports. Defense officials stated the interception marks the 15th such enforcement action conducted since regional security operations escalated earlier this year.</p>
+        </li>
+    
+        <li class="list-item">
+            <strong><a href="https://www.google.com/search?q=Army+Deems+Munitions+Detonation+Successful+as+Environmental+Agency+Monitors+Sites+Associated+Press" target="_blank" rel="noopener">Army Deems Munitions Detonation Successful as Environmental Agency Monitors Sites</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="source">(Associated Press)</span>
+            <p>The U.S. Army and Environmental Protection Agency reported that a controlled detonation of aging explosive chemical stockpiles at the Iowa Ammunition Plant was carried out safely. Environmental monitoring teams are actively testing local air and soil samples following community requests for greater advance notification.</p>
+        </li>
+    
+        <li class="list-item">
+            <strong><a href="https://www.google.com/search?q=Pizza+Hut+Co-Founder+Dan+Carney+Passes+Away+at+Age+95+Associated+Press" target="_blank" rel="noopener">Pizza Hut Co-Founder Dan Carney Passes Away at Age 95</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="source">(Associated Press)</span>
+            <p>Dan Carney, who co-founded Pizza Hut in 1958 alongside his brother using a $600 family loan, has died at the age of 95. The entrepreneur helped pioneer the modern global fast-casual franchise industry, expanding the brand to tens of thousands of locations worldwide.</p>
         </li>
     </ul>
 
@@ -369,41 +382,41 @@
         <ul class="item-list">
         <li class="list-item">
             <div class="row-between">
-                <strong><a href="https://www.zillow.com/homedetails/6658-Loveland-Miamiville-Rd-Loveland-OH-45140/51259397_zpid/" target="_blank" rel="noopener">6658 Loveland Miamiville Rd, Loveland, OH 45140</a></strong>
-                <span class="price">$485,000</span>
+                <strong><a href="https://www.zillow.com/homedetails/30-Shadycrest-Ln-APT-2-Loveland-OH-45140/2054537766_zpid/" target="_blank" rel="noopener">30 Shadycrest Ln, Loveland, OH 45140</a></strong>
+                <span class="price">$315,000</span>
             </div>
             <div class="meta-line">
                 <span class="badge deal-badge">New Listing</span>
                 <span class="badge">Short-Term Rental (Airbnb)</span>
-                <span class="badge">Est. Cash Flow: -$1,218/mo (Actual Tax $343/mo)</span>
+                <span class="badge">Est. Cash Flow: +$57/mo (AirDNA Est., Actual Tax $270/mo)</span>
             </div>
-            <p>3 beds, 2 baths, 1,750 sqft; positioned right along the Loveland-Miamiville corridor minutes from the Little Miami Scenic Bike Trail and downtown dining, offering outstanding Airbnb occupancy appeal.</p>
+            <p>3 beds, 2 baths, 1,350 sqft located on a quiet dead-end street minutes from the Little Miami Scenic Trail and Downtown Loveland dining; strong Airbnb potential for weekend trail cyclists and wedding guests.</p>
         </li>
     
         <li class="list-item">
             <div class="row-between">
                 <strong><a href="https://www.zillow.com/homedetails/1311-Us-Route-50-Milford-OH-45150/51269686_zpid/" target="_blank" rel="noopener">1311 US Route 50, Milford, OH 45150</a></strong>
-                <span class="price">$399,000</span>
+                <span class="price">$479,000</span>
             </div>
             <div class="meta-line">
                 <span class="badge deal-badge">Price Cut / Value Deal</span>
-                <span class="badge">Value-Add</span>
-                <span class="badge">Est. Cash Flow: -$916/mo (Actual Tax $304/mo)</span>
+                <span class="badge">Short-Term Rental (Airbnb)</span>
+                <span class="badge">Est. Cash Flow: -$604/mo (AirDNA Est., Actual Tax $343/mo)</span>
             </div>
-            <p>3 beds, 2 baths, 1,820 sqft; historic architectural features with recent price cut, offering substantial equity upside and easy highway access directly adjacent to Loveland.</p>
+            <p>4 beds, 3 baths, 3,038 sqft historic home discounted after 45 days on market; unmatched architectural character just minutes from the Old Milford riverfront and brewery district.</p>
         </li>
     
         <li class="list-item">
             <div class="row-between">
-                <strong><a href="https://www.zillow.com/homedetails/4448-Station-Ave-Cincinnati-OH-45232/34261826_zpid/" target="_blank" rel="noopener">4448 Station Ave, Cincinnati, OH 45232</a></strong>
-                <span class="price">$205,000</span>
+                <strong><a href="https://www.zillow.com/homedetails/3842-Duck-Creek-Rd-Cincinnati-OH-45227/309909354_zpid/" target="_blank" rel="noopener">3842 Duck Creek Rd, Cincinnati, OH 45227</a></strong>
+                <span class="price">$349,900</span>
             </div>
             <div class="meta-line">
                 <span class="badge deal-badge">Price Cut / Value Deal</span>
                 <span class="badge">Long-Term Rental</span>
-                <span class="badge">Est. Cash Flow: +$479/mo (Actual Tax $182/mo)</span>
+                <span class="badge">Est. Cash Flow: -$471/mo (Zillow Rent Est., Actual Tax $304/mo)</span>
             </div>
-            <p>3 beds, 1 bath, 1,280 sqft; priced at just $160/sqft with strong long-term rental cashflow numbers and rapid commuter access across Greater Cincinnati.</p>
+            <p>3 beds, 2.5 baths, 1,680 sqft situated in a prime commuter corridor near Oakley and I-71; recent $15,000 price adjustment provides strong cashflow yield and low vacancy risk.</p>
         </li>
     </ul>
 
@@ -411,28 +424,28 @@
         <ul class="item-list">
         <li class="list-item">
             <div class="row-between">
-                <strong><a href="https://www.zillow.com/homedetails/1835-Baymiller-St-Cincinnati-OH-45214/2056603343_zpid/" target="_blank" rel="noopener">1835 Baymiller St, Cincinnati, OH 45214</a></strong>
-                <span class="price">$385,000</span>
+                <strong><a href="https://www.zillow.com/homedetails/4448-Station-Ave-Cincinnati-OH-45232/34261826_zpid/" target="_blank" rel="noopener">4448 Station Ave, Cincinnati, OH 45232</a></strong>
+                <span class="price">$205,000</span>
             </div>
             <div class="meta-line">
-                <span class="badge deal-badge">New Listing</span>
+                <span class="badge deal-badge">Price Cut / Value Deal</span>
                 <span class="badge">Duplex</span>
-                <span class="badge">Est. Cash Flow: -$128/mo (Actual Tax $327/mo)</span>
+                <span class="badge">Est. Cash Flow: +$150/mo (Zillow Rent Est., Actual Tax $196/mo)</span>
             </div>
-            <p>2 units, 4 beds, 3 baths, 2,800 sqft; historic brick structure with separate utilities, offering turnkey tenancy and an estimated 8.4% cap rate in an appreciating urban node.</p>
+            <p>2-unit turnkey duplex offering 4 beds, 2 baths total across 1,920 sqft; entry-level acquisition price provides an immediate double-digit gross yield with low property tax overhead.</p>
         </li>
     
         <li class="list-item">
             <div class="row-between">
-                <strong><a href="https://www.zillow.com/homedetails/3835-Edge-Hill-Pl-Cincinnati-OH-45229/34227830_zpid/" target="_blank" rel="noopener">3835 Edge Hill Pl, Cincinnati, OH 45229</a></strong>
-                <span class="price">$495,000</span>
+                <strong><a href="https://www.zillow.com/homedetails/2668-Losantiville-Ave-1-Cincinnati-OH-45237/2062747325_zpid/" target="_blank" rel="noopener">2668 Losantiville Ave, Cincinnati, OH 45237</a></strong>
+                <span class="price">$389,000</span>
             </div>
             <div class="meta-line">
-                <span class="badge deal-badge">Price Cut / Value Deal</span>
+                <span class="badge deal-badge">New Listing</span>
                 <span class="badge">Triplex</span>
-                <span class="badge">Est. Cash Flow: +$136/mo (Actual Tax $404/mo)</span>
+                <span class="badge">Est. Cash Flow: -$96/mo (Zillow Rent Est., Actual Tax $342/mo)</span>
             </div>
-            <p>3 units, 6 beds, 4 baths, 3,450 sqft; rare multi-unit parcel with generous parking, established rental histories, and solid gross rent multipliers.</p>
+            <p>3-unit building with two 2-bedroom units and one 1-bedroom unit totaling 6 beds, 3 baths and 2,850 sqft; strong rental corridor near Ridge Avenue with sub-5% vacancy rates and separate electric meters.</p>
         </li>
     
         <li class="list-item">
@@ -442,107 +455,117 @@
             </div>
             <div class="meta-line">
                 <span class="badge deal-badge">Price Cut / Value Deal</span>
-                <span class="badge">Duplex</span>
-                <span class="badge">Est. Cash Flow: -$664/mo (Actual Tax $368/mo)</span>
+                <span class="badge">Quadplex</span>
+                <span class="badge">Est. Cash Flow: -$80/mo (Zillow Rent Est., Actual Tax $415/mo)</span>
             </div>
-            <p>2 units, 5 beds, 3 baths, 2,650 sqft; recent price improvement provides immediate positive cashflow in a high-demand commuter and healthcare workforce rental pocket.</p>
+            <p>4-unit multi-family property with recent price cut down from $499k; over 3,400 sqft with high-ceiling units, separate heating systems, and strong cap rate upside near Xavier University and healthcare hubs.</p>
         </li>
     </ul>
 
-        <h2>Top 10 Events Near 45140</h2>
+        <h2>Top 20 Events Near 45140</h2>
         <h3 class="subsection">This Month (November 2026)</h3>
         <ul class="item-list">
-        <li class="list-item">
-            <div class="row-between">
-                <strong><a href="https://cincinnatizoo.org/events/festival-of-lights/" target="_blank" rel="noopener">44th Annual PNC Festival of Lights</a></strong>
-                <span class="badge">Zoo/Aquarium</span>
-            </div>
-            <p class="meta">📅 Friday, November 27, 2026 at 4:00 PM - 10:00 PM &nbsp;|&nbsp; 📍 Cincinnati Zoo &amp; Botanical Garden, Cincinnati, OH</p>
-            <p>A peaceful and visually stunning evening walk through five million holiday lights, perfect for an easygoing seasonal outing.</p>
+        <li class="list-item event-item">
+            <strong><a href="https://cincinnatizoo.org/events/festival-of-lights/" target="_blank" rel="noopener">PNC Festival of Lights</a></strong>
+            <span class="badge event-time">Friday, November 27, 2026, 10:00 AM - 10:00 PM (Lights at 4:00 PM)</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong><a href="https://www.google.com/search?q=Scuba+Santa%27s+Water+Wonderland+Newport+Aquarium%2C+Newport%2C+KY" target="_blank" rel="noopener">Scuba Santa&#x27;s Water Wonderland</a> <span class='search-tag'>[Search]</span></strong>
-                <span class="badge">Zoo/Aquarium</span>
-            </div>
-            <p class="meta">📅 Friday, November 27 – Monday, November 30, 2026 from 10:00 AM - 5:00 PM &nbsp;|&nbsp; 📍 Newport Aquarium, Newport, KY</p>
-            <p>A festive and relaxed visit along the riverfront to enjoy immersive underwater displays and colorful holiday light exhibits.</p>
+        <li class="list-item event-item">
+            <strong><a href="https://www.google.com/search?q=Light+Up+the+Square+Holiday+Celebration+Fountain+Square+%2F+Elm+Street+Plaza%2C+Cincinnati" target="_blank" rel="noopener">Light Up the Square Holiday Celebration</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="badge event-time">Friday, November 27, 2026, 6:00 PM - 9:00 PM</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong><a href="https://www.google.com/search?q=Annie+Lederman+Live+Stand-Up+Comedy+Cincinnati+Funny+Bone%2C+Liberty+Township%2C+OH" target="_blank" rel="noopener">Annie Lederman Live Stand-Up Comedy</a> <span class='search-tag'>[Search]</span></strong>
-                <span class="badge">Comedy</span>
-            </div>
-            <p class="meta">📅 Friday, November 27 &amp; Saturday, November 28, 2026 at 7:00 PM &nbsp;|&nbsp; 📍 Cincinnati Funny Bone, Liberty Township, OH</p>
-            <p>A great laugh-out-loud date night or evening with friends at a premier comedy club located just minutes north of Loveland.</p>
+        <li class="list-item event-item">
+            <strong><a href="https://www.google.com/search?q=Christkindlmarkt+Holiday+Beer+Extravaganza+%26+Jazz+Night+Cincinnati+Lager+House+%26+Roebling+Event+Center%2C+Cincinnati" target="_blank" rel="noopener">Christkindlmarkt Holiday Beer Extravaganza &amp; Jazz Night</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="badge event-time">Friday, November 27, 2026, 6:00 PM - 9:00 PM</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong><a href="https://www.cincinnatiartmuseum.org/art/exhibitions/nancy-rexroth-secrets-of-my-power/" target="_blank" rel="noopener">Nancy Rexroth: Secrets of My Power Photography Exhibition</a></strong>
-                <span class="badge">Museum</span>
-            </div>
-            <p class="meta">📅 Friday, November 27 – Sunday, November 29, 2026 from 11:00 AM - 5:00 PM &nbsp;|&nbsp; 📍 Cincinnati Art Museum, Cincinnati, OH</p>
-            <p>A quiet, contemplative cultural afternoon exploring landmark fine art photography celebrating vintage Ohio landscapes.</p>
+        <li class="list-item event-item">
+            <strong><a href="https://www.visitcincy.com/events/?skip=60&amp;sort=date" target="_blank" rel="noopener">Marion Meadows Live at Ludlow Garage</a></strong>
+            <span class="badge event-time">Friday, November 27, 2026, 8:00 PM</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong><a href="https://www.google.com/search?q=Cincinnati+Christkindlmarkt+%26+Light+Up+the+Square+Fountain+Square+%26+Moerlein+Lager+House%2C+Cincinnati%2C+OH" target="_blank" rel="noopener">Cincinnati Christkindlmarkt &amp; Light Up the Square</a> <span class='search-tag'>[Search]</span></strong>
-                <span class="badge">Community</span>
-            </div>
-            <p class="meta">📅 Friday, November 27, 2026 at 6:00 PM &nbsp;|&nbsp; 📍 Fountain Square &amp; Moerlein Lager House, Cincinnati, OH</p>
-            <p>An open-air European-style market offering artisan gifts, warm seasonal drinks, and lively festive atmosphere.</p>
+        <li class="list-item event-item">
+            <strong><a href="https://www.visitcincy.com/events/?skip=60&amp;sort=date" target="_blank" rel="noopener">O Christmas Tea: A British Comedy</a></strong>
+            <span class="badge event-time">Friday, November 27 - Sunday, November 29, 2026, 7:30 PM</span>
+        </li>
+    
+        <li class="list-item event-item">
+            <strong><a href="https://www.visitcincy.com/events/?skip=60&amp;sort=date" target="_blank" rel="noopener">Queensrÿche Live in Concert</a></strong>
+            <span class="badge event-time">Friday, November 27, 2026, 8:00 PM</span>
+        </li>
+    
+        <li class="list-item event-item">
+            <strong><a href="https://ohparent.com/things-to-do-this-weekend/" target="_blank" rel="noopener">Downtown Dazzle Fireworks &amp; Holiday Spectacular</a></strong>
+            <span class="badge event-time">Saturday, November 28, 2026, 6:00 PM - 8:00 PM</span>
+        </li>
+    
+        <li class="list-item event-item">
+            <strong><a href="https://cometbar.com/venue/bombs-away-comedy-at-the-comet/" target="_blank" rel="noopener">Bombs Away! Comedy Showcase at The Comet</a></strong>
+            <span class="badge event-time">Saturday, November 28, 2026, 9:30 PM</span>
+        </li>
+    
+        <li class="list-item event-item">
+            <strong><a href="https://www.google.com/search?q=LumenScape+Architectural+Projection+Mapping+Experience+Roebling+Event+Center%2C+Cincinnati" target="_blank" rel="noopener">LumenScape Architectural Projection Mapping Experience</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="badge event-time">Sunday, November 29, 2026, 3:00 PM - 9:00 PM</span>
+        </li>
+    
+        <li class="list-item event-item">
+            <strong><a href="https://www.visitcincy.com/events/?skip=60&amp;sort=date" target="_blank" rel="noopener">Built on Beer Historic Brewery District Tour</a></strong>
+            <span class="badge event-time">Friday, November 27, 2026, 1:00 PM - 3:00 PM</span>
         </li>
     </ul>
 
         <h3 class="subsection">Next Month (December 2026)</h3>
         <ul class="item-list">
-        <li class="list-item">
-            <div class="row-between">
-                <strong><a href="https://lovinlifeloveland.com/events/christmas-tree-lighting-festival/" target="_blank" rel="noopener">6th Annual Loveland Christmas Tree Lighting Festival</a></strong>
-                <span class="badge">Community</span>
-            </div>
-            <p class="meta">📅 Saturday, December 5, 2026 from 4:00 PM - 8:00 PM &nbsp;|&nbsp; 📍 Historic Downtown Loveland along the Bike Trail, Loveland, OH</p>
-            <p>Loveland&#x27;s premier hometown holiday gathering featuring a 60-foot tree lighting, baking contests, and local community fellowship.</p>
+        <li class="list-item event-item">
+            <strong><a href="https://business.lovelandchamber.org/events/details/christmas-in-loveland-2026-7119" target="_blank" rel="noopener">Christmas in Loveland 2026</a></strong>
+            <span class="badge event-time">Saturday, December 12, 2026, 2:00 PM - 6:00 PM</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong><a href="https://lovinlifeloveland.com/events/christmas-in-loveland-2/" target="_blank" rel="noopener">Christmas in Loveland</a></strong>
-                <span class="badge">Community</span>
-            </div>
-            <p class="meta">📅 Saturday, December 12, 2026 from 2:00 PM - 6:00 PM &nbsp;|&nbsp; 📍 Historic Downtown Loveland, Loveland, OH</p>
-            <p>A warm, walkable neighborhood celebration with horse-drawn carriages, live nativity scenes, and hospitality from local merchants.</p>
+        <li class="list-item event-item">
+            <strong><a href="https://www.lovelandoh.gov/?nid=1&amp;mobile=ON" target="_blank" rel="noopener">6th Annual Christmas Tree Lighting Festival</a></strong>
+            <span class="badge event-time">Saturday, December 5, 2026, 4:00 PM - 8:00 PM</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong><a href="https://www.google.com/search?q=Cincinnati+Pops+Orchestra%3A+Holiday+Pops+Cincinnati+Music+Hall%2C+Cincinnati%2C+OH" target="_blank" rel="noopener">Cincinnati Pops Orchestra: Holiday Pops</a> <span class='search-tag'>[Search]</span></strong>
-                <span class="badge">Concert</span>
-            </div>
-            <p class="meta">📅 Friday, December 11 – Sunday, December 13, 2026 (Multiple Showtimes) &nbsp;|&nbsp; 📍 Cincinnati Music Hall, Cincinnati, OH</p>
-            <p>A cherished regional musical tradition offering timeless orchestral melodies in the acoustically renowned setting of historic Music Hall.</p>
+        <li class="list-item event-item">
+            <strong><a href="https://cincinnatiartmuseum.org/events/events-list/stand-up-history-1210/" target="_blank" rel="noopener">Stand-Up History at Cincinnati Art Museum</a></strong>
+            <span class="badge event-time">Thursday, December 10, 2026, 6:00 PM - 7:30 PM</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong><a href="https://www.google.com/search?q=The+Nutcracker+by+Cincinnati+Ballet+Cincinnati+Music+Hall%2C+Cincinnati%2C+OH" target="_blank" rel="noopener">The Nutcracker by Cincinnati Ballet</a> <span class='search-tag'>[Search]</span></strong>
-                <span class="badge">Concert</span>
-            </div>
-            <p class="meta">📅 December 17 – December 27, 2026 (Various Showtimes) &nbsp;|&nbsp; 📍 Cincinnati Music Hall, Cincinnati, OH</p>
-            <p>A splendid cultural classic pairing world-class dance choreography with live performance by the Cincinnati Symphony Orchestra.</p>
+        <li class="list-item event-item">
+            <strong><a href="https://heritagebankcenter.com/event/2026/12/leanne-morgan-the-time-of-our-lives-tour" target="_blank" rel="noopener">Leanne Morgan: The Time Of Our Lives Tour</a></strong>
+            <span class="badge event-time">Thursday, December 10, 2026, 7:00 PM</span>
         </li>
     
-        <li class="list-item">
-            <div class="row-between">
-                <strong><a href="https://biketrailbooks.com/events/6676920261219" target="_blank" rel="noopener">A Night of Small Town Magic</a></strong>
-                <span class="badge">Community</span>
-            </div>
-            <p class="meta">📅 Saturday, December 19, 2026 at 7:00 PM &nbsp;|&nbsp; 📍 Bike Trail Books, 113 Karl Brown Way, Loveland, OH</p>
-            <p>A cozy, intimate gathering in downtown Loveland featuring DIY seasonal simmer pots, charcuterie, and book exchanges.</p>
+        <li class="list-item event-item">
+            <strong><a href="https://www.google.com/search?q=Holiday+Junction+featuring+Duke+Energy+Trains+Cincinnati+Museum+Center+at+Union+Terminal%2C+Cincinnati" target="_blank" rel="noopener">Holiday Junction featuring Duke Energy Trains</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="badge event-time">Daily throughout December 2026, 10:00 AM - 5:00 PM</span>
+        </li>
+    
+        <li class="list-item event-item">
+            <strong><a href="https://cincinnati.events/december/" target="_blank" rel="noopener">Chamber Music Cincinnati: Isidore String Quartet &amp; Sterling Elliott</a></strong>
+            <span class="badge event-time">Tuesday, December 8, 2026, 7:30 PM</span>
+        </li>
+    
+        <li class="list-item event-item">
+            <strong><a href="https://www.visitcincy.com/events/?skip=60&amp;sort=date" target="_blank" rel="noopener">Nutcracker, Jazzed Up</a></strong>
+            <span class="badge event-time">Tuesday, December 1 - Saturday, December 5, 2026, 7:00 PM</span>
+        </li>
+    
+        <li class="list-item event-item">
+            <strong><a href="https://www.google.com/search?q=Northeast+Cincinnati+Real+Estate+Investor+Roundtable+Cincinnati+Marriott+Northeast%2C+Mason%2C+OH" target="_blank" rel="noopener">Northeast Cincinnati Real Estate Investor Roundtable</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="badge event-time">Tuesday, December 15, 2026, 6:00 PM - 8:30 PM</span>
+        </li>
+    
+        <li class="list-item event-item">
+            <strong><a href="https://www.google.com/search?q=Live+Acoustic+Music+%26+Fireside+Drinks+at+Winterhaus+Fountain+Square%2C+Cincinnati" target="_blank" rel="noopener">Live Acoustic Music &amp; Fireside Drinks at Winterhaus</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="badge event-time">Friday, December 18, 2026, 6:00 PM - 9:00 PM</span>
+        </li>
+    
+        <li class="list-item event-item">
+            <strong><a href="https://www.google.com/search?q=Holiday+Karaoke+%26+Ugly+Sweater+Social+Cappy%27s+Wine+and+Spirits%2C+Loveland%2C+OH" target="_blank" rel="noopener">Holiday Karaoke &amp; Ugly Sweater Social</a> <span class='search-tag'>[Search]</span></strong>
+            <span class="badge event-time">Friday, December 18, 2026, 8:00 PM - 11:30 PM</span>
         </li>
     </ul>
     </div>
