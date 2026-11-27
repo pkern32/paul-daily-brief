@@ -230,8 +230,8 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
 }}
 
 Strict Requirements:
-1. "events_this_month": 5 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in the remainder of {current_month} (on or after {today_str}) spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
-2. "events_next_month": 5 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in {next_month} spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
+1. "events_this_month": Top 10 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in the remainder of {current_month} (on or after {today_str}) spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
+2. "events_next_month": Top 10 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in {next_month} spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
 3. "sports": Cover ONLY these 4 Minnesota pro teams: Minnesota Twins, Minnesota Vikings, Minnesota Wild, and Minnesota Timberwolves. Include each team's single top current news headline with source and direct article URL, plus ONLY final score and top performers for the most recent completed game, an ESPN.com box score URL ("box_score_url" on espn.com), and direct team schedule URL.
 4. "sports_news": Top 5 major sports headlines today sourced strictly from ESPN.com ("source": "ESPN", with direct "url" links on www.espn.com).
 5. "single_family_homes": Exactly 3 active for-sale single-family homes on Zillow.com in 45140 (or immediately adjacent Loveland/Maineville/Milford) with a STRICT MAXIMUM asking price of $500,000. Focus specifically on brand-new listings OR older listings with recent price cuts / strong value-per-sqft deals suitable for STR (Airbnb) or LTR investment. Every "url" MUST be on zillow.com.
@@ -847,16 +847,15 @@ def render_property_list(listings, is_multifamily=False):
 
 
 def render_event_list(events):
+    trimmed = (events or [])[:10]
+    if not trimmed:
+        return '<li class="list-item event-item"><span class="meta">No upcoming events listed.</span></li>'
     return "".join(f"""
-        <li class="list-item">
-            <div class="row-between">
-                <strong>{link_tag(e.get('url'), esc(e.get('title')), e.get('url_verified', True))}</strong>
-                <span class="badge">{esc(e.get('category'))}</span>
-            </div>
-            <p class="meta">📅 {esc(e.get('date_time'))} &nbsp;|&nbsp; 📍 {esc(e.get('location'))}</p>
-            <p>{esc(e.get('why_it_fits'))}</p>
+        <li class="list-item event-item">
+            <strong>{link_tag(e.get('url'), esc(e.get('title')), e.get('url_verified', True))}</strong>
+            <span class="badge event-time">{esc(e.get('date_time'))}</span>
         </li>
-    """ for e in events)
+    """ for e in trimmed)
 
 
 def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
@@ -998,7 +997,7 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             margin-bottom: 12px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
         }}
-        li.calendar-item {{
+        li.calendar-item, li.event-item {{
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -1013,7 +1012,7 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             font-weight: 600;
             color: var(--text);
         }}
-        .cal-time {{
+        .cal-time, .event-time {{
             margin-right: 0;
             white-space: nowrap;
             font-size: 0.72rem;
@@ -1114,7 +1113,7 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
         <h3 class="subsection">Multifamily Properties (Max $1,500,000 &bull; New &amp; Value Deals)</h3>
         <ul class="item-list">{mfh_html}</ul>
 
-        <h2>Top 10 Events Near 45140</h2>
+        <h2>Top 20 Events Near 45140</h2>
         <h3 class="subsection">This Month ({esc(current_month)})</h3>
         <ul class="item-list">{events_this_html}</ul>
 
@@ -1148,5 +1147,3 @@ if __name__ == "__main__":
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html_output)
     print("Successfully generated index.html")
-
-```
