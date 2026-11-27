@@ -1061,4 +1061,148 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             padding: 9px 14px;
             margin-bottom: 8px;
         }}
-        details.news-item
+        details.news-item {{
+            margin: 0;
+        }}
+        summary.news-summary {{
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }}
+        summary.news-summary::-webkit-details-marker {{
+            display: none;
+        }}
+        summary.news-summary::before {{
+            content: "▸";
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: transform 0.15s ease;
+        }}
+        details[open] > summary.news-summary::before {{
+            content: "▾";
+            color: var(--text);
+        }}
+        .news-title {{
+            display: inline;
+        }}
+        p.news-lead {{
+            margin: 8px 0 2px 18px !important;
+            padding-top: 6px;
+            border-top: 1px solid var(--border);
+            font-size: 0.92rem !important;
+            color: var(--muted) !important;
+        }}
+        li.calendar-item, li.event-item {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            line-height: 1.35;
+        }}
+        .cal-title {{
+            font-weight: 600;
+            color: var(--text);
+        }}
+        .cal-time, .event-time {{
+            margin-right: 0;
+            white-space: nowrap;
+            font-size: 0.72rem;
+        }}
+        li.list-item p {{ margin: 6px 0 0 0; font-size: 0.95rem; color: var(--text); }}
+        .team-title {{
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.05rem;
+            color: var(--text);
+        }}
+        .team-logo {{
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 4px;
+            flex-shrink: 0;
+            display: block;
+        }}
+        .meta-line {{ margin-top: 6px; }}
+        .team-headline {{
+            background: #1f222a;
+            border: 1px solid #373c47;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-top: 8px !important;
+            font-size: 0.92rem;
+            color: var(--text);
+        }}
+        .row-between {{ display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }}
+        .badge {{
+            display: inline-block;
+            background: #22262f;
+            color: var(--muted);
+            border: 1px solid #373c47;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+            margin-right: 4px;
+        }}
+        .deal-badge {{
+            background: #2c313c;
+            color: var(--text);
+        }}
+        .search-tag {{
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: normal;
+        }}
+        .price {{ font-weight: 700; color: var(--accent); white-space: nowrap; }}
+        .meta {{ color: var(--muted) !important; font-size: 0.88rem; }}
+        a {{ color: var(--link); text-decoration: none; }}
+        a:hover {{ color: #ffffff; text-decoration: underline; }}
+        .source {{ color: var(--muted); font-size: 0.85rem; margin-left: 6px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Paul's Daily Brief</h1>
+            <div class="updated">Last refreshed: {esc(now_et)} &bull; Auto-updates every 4 hours</div>
+        </header>
+
+        <section class="quote-box">
+            <blockquote>&ldquo;{esc(q.get('text'))}&rdquo;</blockquote>
+            <cite>&mdash; {link_tag(q.get('source_url'), esc(q.get('author')), q.get('url_verified', True))}</cite>
+        </section>
+
+        <div class="calendar-grid">
+            <div>
+                <h2>Today's Calendar</h2>
+                <ul class="item-list">{today_calendar_html}</ul>
+            </div>
+            <div>
+                <h2>Tomorrow's Calendar</h2>
+                <ul class="item-list">{tomorrow_calendar_html}</ul>
+            </div>
+        </div>
+
+        <h2>Minnesota Pro Sports</h2>
+        <ul class="item-list">{sports_html}</ul>
+
+        <h2>Top 5 Sports Headlines (ESPN)</h2>
+        <ul class="item-list">{sports_news_html}</ul>
+
+        <h2>Top 5 Local News (45140 / Greater Cincinnati)</h2>
+        <ul class="item-list">{local_html}</ul>
+
+        <h2>Top 5 National News (Neutral Sources)</h2>
+        <ul class="item-list">{national_html}</ul>
+
+        <h2>45140 Area
