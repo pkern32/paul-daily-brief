@@ -79,15 +79,14 @@ Strict Requirements:
 
 def fetch_digest():
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3.8-flash",
         contents=PROMPT,
         config=types.GenerateContentConfig(
             tools=[{"google_search": {}}],
-            temperature=0.3,
+            thinking_config=types.ThinkingConfig(thinking_level="medium"),
         ),
     )
-    raw_text = response.text.strip()
-    # Strip accidental markdown code fences if present
+    raw_text = (response.text or "").strip()
     if raw_text.startswith("```"):
         raw_text = raw_text.split("\n", 1)[1]
         if raw_text.endswith("```"):
