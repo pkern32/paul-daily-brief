@@ -13,30 +13,10 @@ from google.genai import types
 client = genai.Client()
 
 TEAM_LOGOS = {
-    "Minnesota Twins": (
-        '<svg class="team-logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">'
-        '<circle cx="16" cy="16" r="14" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2"/>'
-        '<text x="16" y="20" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700" font-family="sans-serif">MIN</text>'
-        '</svg>'
-    ),
-    "Minnesota Vikings": (
-        '<svg class="team-logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">'
-        '<rect x="3" y="3" width="26" height="26" rx="6" fill="#1d4ed8" stroke="#60a5fa" stroke-width="2"/>'
-        '<path d="M8 9 L16 24 L24 9 L19.5 9 L16 16.5 L12.5 9 Z" fill="#ffffff"/>'
-        '</svg>'
-    ),
-    "Minnesota Wild": (
-        '<svg class="team-logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">'
-        '<polygon points="16,3 28,10 28,22 16,29 4,22 4,10" fill="#1e40af" stroke="#60a5fa" stroke-width="2"/>'
-        '<polygon points="16,8 22,19 10,19" fill="#ffffff"/>'
-        '</svg>'
-    ),
-    "Minnesota Timberwolves": (
-        '<svg class="team-logo" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">'
-        '<circle cx="16" cy="16" r="14" fill="#0f172a" stroke="#60a5fa" stroke-width="2"/>'
-        '<polygon points="16,7 25,16 16,25 7,16" fill="#2563eb" stroke="#ffffff" stroke-width="1.5"/>'
-        '</svg>'
-    ),
+    "Minnesota Twins": "https://a.espncdn.com/i/teamlogos/mlb/500/min.png",
+    "Minnesota Vikings": "https://a.espncdn.com/i/teamlogos/nfl/500/min.png",
+    "Minnesota Wild": "https://a.espncdn.com/i/teamlogos/nhl/500/min.png",
+    "Minnesota Timberwolves": "https://a.espncdn.com/i/teamlogos/nba/500/min.png",
 }
 
 ESPN_TEAM_CONFIG = {
@@ -84,6 +64,49 @@ ESPN_LEAGUE_FEEDS = [
     ("hockey", "nhl", "https://www.espn.com/nhl/"),
     ("baseball", "mlb", "https://www.espn.com/mlb/"),
 ]
+
+# AirDNA benchmarks for Loveland, OH ($178 ADR, 60% occupancy -> ~$3,251/mo)
+AIRDNA_LOVELAND_ADR = 178.0
+AIRDNA_LOVELAND_OCCUPANCY = 0.60
+AVG_DAYS_PER_MONTH = 365.25 / 12.0
+
+_RESOLVED_LOGO_CACHE = {}
+
+
+def get_team_logo_url(team_name):
+    key = str(team_name or "").strip()
+    if key in _RESOLVED_LOGO_CACHE:
+        return _RESOLVED_LOGO_CACHE[key]
+
+    fallback = TEAM_LOGOS.get(key, "")
+    cfg = ESPN_TEAM_CONFIG.get(key)
+    if not cfg:
+        _RESOLVED_LOGO_CACHE[key] = fallback
+        return fallback
+
+    api_url = (
+        f"https://site.api.espn.com/apis/site/v2/sports/"
+        f"{cfg['sport']}/{cfg['league']}/teams/{cfg['espn_team_id']}"
+    )
+    try:
+        resp = requests.get(api_url, headers=HEADERS, timeout=5)
+        if resp.status_code == 200:
+            logos = (resp.json().get("team") or {}).get("logos") or []
+            for entry in logos:
+                href = str(entry.get("href") or "").strip()
+                rels = entry.get("rel") or []
+                if href and ("default" in rels or "full" in rels):
+                    _RESOLVED_LOGO_CACHE[key] = href
+                    return href
+            if logos and logos[0].get("href"):
+                href = str(logos[0]["href"]).strip()
+                _RESOLVED_LOGO_CACHE[key] = href
+                return href
+    except Exception:
+        pass
+
+    _RESOLVED_LOGO_CACHE[key] = fallback
+    return fallback
 
 
 def get_month_labels():
@@ -160,6 +183,9 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
       "address": "Street Address, City, OH ZIP",
       "price": "$XXX,XXX",
       "annual_tax_paid": "$X,XXX",
+      "zillow_rent_estimate": "$X,XXX",
+      "airdna_adr": "$XXX",
+      "airdna_occupancy": "60%",
       "listing_status": "New Listing | Price Cut / Value Deal",
       "strategy": "Short-Term Rental (Airbnb) | Long-Term Rental | Value-Add",
       "metrics_pitch": "Beds/baths/sqft, days on market or recent price cut details, and rental/equity upside near Loveland bike trail, downtown, or commuter routes",
@@ -171,6 +197,9 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
       "address": "Street Address, City, OH ZIP",
       "price": "$X,XXX,XXX",
       "annual_tax_paid": "$XX,XXX",
+      "zillow_rent_estimate": "$X,XXX",
+      "airdna_adr": "$XXX",
+      "airdna_occupancy": "60%",
       "listing_status": "New Listing | Price Cut / Value Deal",
       "strategy": "Duplex | Triplex | Quadplex | Small Apartment Building",
       "metrics_pitch": "Unit count, total beds/baths/sqft, days on market or price drop, and estimated gross rent/cap rate angle",
@@ -548,6 +577,16 @@ def parse_price_number(val):
         return 0.0
 
 
+def parse_percentage(val, default_val):
+    raw = str(val or "").strip()
+    if not raw:
+        return default_val
+    num = parse_price_number(raw)
+    if num <= 0:
+        return default_val
+    return num / 100.0 if num > 1.0 else num
+
+
 def estimate_monthly_tax(listing, price):
     actual_annual_tax = parse_price_number(listing.get("annual_tax_paid"))
     if actual_annual_tax > 0:
@@ -567,35 +606,84 @@ def estimate_monthly_tax(listing, price):
     return (price * est_rate) / 12.0, False
 
 
+def get_zillow_ltr_rent(listing, is_multifamily=False):
+    for key in ("zillow_rent_estimate", "rent_zestimate", "zestimate_rent"):
+        val = parse_price_number(listing.get(key))
+        if val > 0:
+            return val, True
+
+    pitch = str(listing.get("metrics_pitch") or "")
+    z_match = re.search(r"rent\s*zestimate[^\d$]*\$?\s*([\d,]+)", pitch, re.I)
+    if z_match:
+        val = parse_price_number(z_match.group(1))
+        if val > 0:
+            return val, True
+
+    if is_multifamily:
+        unit_match = re.search(r"(\d+)\s*-?\s*unit", pitch.lower())
+        units = int(unit_match.group(1)) if unit_match else 2
+        per_unit_rent = 1650.0 if units == 2 else 1550.0
+        return units * per_unit_rent, False
+
+    bed_match = re.search(r"(\d+)\s*(?:bd|bed|br)", pitch.lower())
+    beds = int(bed_match.group(1)) if bed_match else 3
+    base_ltr = 1850.0 if beds <= 2 else (2160.0 if beds == 3 else 2750.0)
+    return base_ltr, False
+
+
+def get_airdna_str_rent(listing, is_multifamily=False):
+    direct_monthly = parse_price_number(listing.get("airdna_monthly_revenue"))
+    if direct_monthly > 0:
+        return direct_monthly, True
+
+    adr = parse_price_number(listing.get("airdna_adr"))
+    has_custom_adr = adr > 0
+    if not has_custom_adr:
+        adr = AIRDNA_LOVELAND_ADR
+
+    occ = parse_percentage(listing.get("airdna_occupancy"), AIRDNA_LOVELAND_OCCUPANCY)
+    has_custom_occ = bool(str(listing.get("airdna_occupancy") or "").strip())
+
+    units = 1
+    if is_multifamily:
+        pitch = str(listing.get("metrics_pitch") or "").lower()
+        strategy = str(listing.get("strategy") or "").lower()
+        unit_match = re.search(r"(\d+)\s*-?\s*unit", pitch)
+        units = int(unit_match.group(1)) if unit_match else (
+            4 if "quadplex" in strategy else 3 if "triplex" in strategy else 2
+        )
+
+    gross_monthly = adr * AVG_DAYS_PER_MONTH * occ * units
+    return gross_monthly, (has_custom_adr or has_custom_occ)
+
+
+def is_str_strategy(listing):
+    strategy = str(listing.get("strategy") or "").lower()
+    pitch = str(listing.get("metrics_pitch") or "").lower()
+    return (
+        "short-term" in strategy
+        or "airbnb" in strategy
+        or "str" in strategy
+        or "short-term" in pitch
+        or "airbnb" in pitch
+    )
+
+
 def estimate_monthly_cash_flow(listing, is_multifamily=False, down_payment_pct=0.20, annual_rate=0.073):
     price = parse_price_number(listing.get("price"))
     if price <= 0:
         return "Est. Cash Flow: N/A"
 
-    pitch = str(listing.get("metrics_pitch") or "").lower()
-    strategy = str(listing.get("strategy") or "").lower()
-
-    if is_multifamily:
-        unit_match = re.search(r"(\d+)\s*-?\s*unit", pitch)
-        units = int(unit_match.group(1)) if unit_match else (
-            4 if "quadplex" in strategy else 3 if "triplex" in strategy else 2
-        )
-        per_unit_rent = 1650.0 if units == 2 else 1550.0
-        gross_rent = units * per_unit_rent
-        vacancy_rate = 0.06
-        non_tax_opex_rate = 0.24
+    if is_str_strategy(listing):
+        gross_rent, has_custom_airdna = get_airdna_str_rent(listing, is_multifamily=is_multifamily)
+        vacancy_rate = 0.15
+        non_tax_opex_rate = 0.28
+        rent_source = "AirDNA Est." if has_custom_airdna else "AirDNA Loveland Avg"
     else:
-        bed_match = re.search(r"(\d+)\s*(?:bd|bed|br)", pitch)
-        beds = int(bed_match.group(1)) if bed_match else 3
-        base_ltr = 1850.0 if beds <= 2 else (2160.0 if beds == 3 else 2750.0)
-        if "short-term" in strategy or "airbnb" in strategy or "str" in pitch:
-            gross_rent = base_ltr * 1.45
-            vacancy_rate = 0.15
-            non_tax_opex_rate = 0.28
-        else:
-            gross_rent = base_ltr
-            vacancy_rate = 0.05
-            non_tax_opex_rate = 0.22
+        gross_rent, has_zillow_rent = get_zillow_ltr_rent(listing, is_multifamily=is_multifamily)
+        vacancy_rate = 0.06 if is_multifamily else 0.05
+        non_tax_opex_rate = 0.24 if is_multifamily else 0.22
+        rent_source = "Zillow Rent Est." if has_zillow_rent else "Zillow Rent Baseline"
 
     monthly_tax, is_actual_tax = estimate_monthly_tax(listing, price)
     effective_rent = gross_rent * (1.0 - vacancy_rate)
@@ -614,7 +702,7 @@ def estimate_monthly_cash_flow(listing, is_multifamily=False, down_payment_pct=0
     cash_flow = effective_rent - monthly_tax - other_opex - pi
     sign = "+" if cash_flow >= 0 else "-"
     tax_label = f"Actual Tax ${round(monthly_tax):,}/mo" if is_actual_tax else f"Est. Tax ${round(monthly_tax):,}/mo"
-    return f"Est. Cash Flow: {sign}${abs(round(cash_flow)):,}/mo ({tax_label})"
+    return f"Est. Cash Flow: {sign}${abs(round(cash_flow)):,}/mo ({rent_source}, {tax_label})"
 
 
 def validate_digest_links(data, grounding_urls):
@@ -720,19 +808,23 @@ def link_tag(url, label, verified=True):
 
 
 def team_logo_tag(team_name):
-    return TEAM_LOGOS.get(str(team_name or "").strip(), "")
+    name = str(team_name or "").strip()
+    logo_url = get_team_logo_url(name)
+    if not logo_url:
+        return ""
+    return (
+        f'<img class="team-logo" src="{esc(logo_url)}" '
+        f'alt="{esc(name)} official logo" width="28" height="28" loading="lazy">'
+    )
 
 
 def render_calendar_html(calendar_events, empty_message="No events scheduled."):
     if not calendar_events:
-        return f'<li class="list-item"><p class="meta">{esc(empty_message)}</p></li>'
+        return f'<li class="list-item calendar-item"><span class="meta">{esc(empty_message)}</span></li>'
     return "".join(f"""
-        <li class="list-item">
-            <div class="row-between">
-                <strong>{esc(ev.get('summary'))}</strong>
-                <span class="badge">{esc(ev.get('time_label'))}</span>
-            </div>
-            <p class="meta">Calendar: {esc(ev.get('calendar_name', 'Personal'))}</p>
+        <li class="list-item calendar-item">
+            <span class="cal-title">{esc(ev.get('summary'))}</span>
+            <span class="badge cal-time">{esc(ev.get('time_label'))}</span>
         </li>
     """ for ev in calendar_events)
 
@@ -835,13 +927,13 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
     <title>Paul's Daily Brief</title>
     <style>
         :root {{
-            --bg: #090d16;
-            --card: #111827;
-            --text: #f8fafc;
-            --muted: #93c5fd;
-            --accent: #60a5fa;
-            --link: #7dd3fc;
-            --border: #1e3a8a;
+            --bg: #0c0d10;
+            --card: #16181d;
+            --text: #f3f4f6;
+            --muted: #9ca3af;
+            --accent: #d1d5db;
+            --link: #e5e7eb;
+            --border: #2a2e37;
         }}
         body {{
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -853,7 +945,7 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
         }}
         .container {{ max-width: 960px; margin: 0 auto; }}
         header {{
-            border-bottom: 2px solid var(--accent);
+            border-bottom: 2px solid var(--border);
             padding-bottom: 16px;
             margin-bottom: 24px;
         }}
@@ -867,13 +959,24 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             border-bottom: 1px solid var(--border);
             padding: 18px 22px;
             border-radius: 8px;
-            margin-bottom: 28px;
+            margin-bottom: 22px;
         }}
         .quote-box blockquote {{ margin: 0 0 8px 0; font-size: 1.1rem; font-style: italic; color: var(--text); }}
         .quote-box cite {{ color: var(--muted); font-size: 0.9rem; }}
+        .calendar-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 8px;
+        }}
+        .calendar-grid h2 {{
+            margin-top: 8px;
+            margin-bottom: 10px;
+            font-size: 1.15rem;
+        }}
         h2 {{
             margin-top: 32px;
-            border-bottom: 1px solid var(--accent);
+            border-bottom: 1px solid var(--border);
             padding-bottom: 6px;
             color: var(--accent);
         }}
@@ -895,6 +998,26 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             margin-bottom: 12px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
         }}
+        li.calendar-item {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            line-height: 1.35;
+        }}
+        .cal-title {{
+            font-weight: 600;
+            color: var(--text);
+        }}
+        .cal-time {{
+            margin-right: 0;
+            white-space: nowrap;
+            font-size: 0.72rem;
+        }}
         li.list-item p {{ margin: 6px 0 0 0; font-size: 0.95rem; color: var(--text); }}
         .team-title {{
             display: inline-flex;
@@ -904,13 +1027,17 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             color: var(--text);
         }}
         .team-logo {{
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 4px;
             flex-shrink: 0;
             display: block;
         }}
         .meta-line {{ margin-top: 6px; }}
         .team-headline {{
-            background: #172554;
-            border: 1px solid #1d4ed8;
+            background: #1f222a;
+            border: 1px solid #373c47;
             padding: 8px 10px;
             border-radius: 6px;
             margin-top: 8px !important;
@@ -920,9 +1047,9 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
         .row-between {{ display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }}
         .badge {{
             display: inline-block;
-            background: #172554;
+            background: #22262f;
             color: var(--muted);
-            border: 1px solid #1e40af;
+            border: 1px solid #373c47;
             font-size: 0.75rem;
             font-weight: 600;
             padding: 2px 8px;
@@ -930,8 +1057,8 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             margin-right: 4px;
         }}
         .deal-badge {{
-            background: #1e3a8a;
-            color: #ffffff;
+            background: #2c313c;
+            color: var(--text);
         }}
         .search-tag {{
             font-size: 0.75rem;
@@ -957,11 +1084,16 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             <cite>&mdash; {link_tag(q.get('source_url'), esc(q.get('author')), q.get('url_verified', True))}</cite>
         </section>
 
-        <h2>Today's Calendar</h2>
-        <ul class="item-list">{today_calendar_html}</ul>
-
-        <h2>Tomorrow's Calendar</h2>
-        <ul class="item-list">{tomorrow_calendar_html}</ul>
+        <div class="calendar-grid">
+            <div>
+                <h2>Today's Calendar</h2>
+                <ul class="item-list">{today_calendar_html}</ul>
+            </div>
+            <div>
+                <h2>Tomorrow's Calendar</h2>
+                <ul class="item-list">{tomorrow_calendar_html}</ul>
+            </div>
+        </div>
 
         <h2>Minnesota Pro Sports</h2>
         <ul class="item-list">{sports_html}</ul>
@@ -995,17 +1127,17 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
 
 if __name__ == "__main__":
     today_calendar = [
-        {"summary": "Paul Work Holiday", "time_label": "All Day (Nov 26–27)", "calendar_name": "Personal"},
-        {"summary": "Marketplace pickup slack line $15", "time_label": "12:00 PM – 12:30 PM EST", "calendar_name": "Personal"},
-        {"summary": "Eli no school", "time_label": "All Day (Nov 23–27)", "calendar_name": "Parenting schedule"},
-        {"summary": "Lauren Thanksgiving break", "time_label": "All Day (Nov 25–27)", "calendar_name": "Parenting schedule"},
-        {"summary": "Isaac/Tracy-Vegas", "time_label": "All Day (Nov 27–Dec 1)", "calendar_name": "Parenting schedule"},
-        {"summary": "Isaac", "time_label": "Ongoing through 2:00 PM EST", "calendar_name": "Parenting schedule"},
-        {"summary": "Sarah", "time_label": "2:00 PM EST – Nov 30, 2:00 PM EST", "calendar_name": "Parenting schedule"},
+        {"summary": "Paul Work Holiday", "time_label": "All Day (Nov 26–27)"},
+        {"summary": "Marketplace pickup slack line $15", "time_label": "12:00 PM – 12:30 PM EST"},
+        {"summary": "Eli no school", "time_label": "All Day (Nov 23–27)"},
+        {"summary": "Lauren Thanksgiving break", "time_label": "All Day (Nov 25–27)"},
+        {"summary": "Isaac/Tracy-Vegas", "time_label": "All Day (Nov 27–Dec 1)"},
+        {"summary": "Isaac", "time_label": "Ongoing through 2:00 PM EST"},
+        {"summary": "Sarah", "time_label": "2:00 PM EST – Nov 30, 2:00 PM EST"},
     ]
     tomorrow_calendar = [
-        {"summary": "Eli lifeguard certification", "time_label": "9:00 AM – 4:00 PM EST", "calendar_name": "Parenting schedule"},
-        {"summary": "Thanksgiving @ Pfarr", "time_label": "5:00 PM – 8:00 PM EST", "calendar_name": "Kern Kids Calendar / Parenting schedule"},
+        {"summary": "Eli lifeguard certification", "time_label": "9:00 AM – 4:00 PM EST"},
+        {"summary": "Thanksgiving @ Pfarr", "time_label": "5:00 PM – 8:00 PM EST"},
     ]
     digest_data = fetch_digest()
     html_output = build_html(
@@ -1016,3 +1148,5 @@ if __name__ == "__main__":
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html_output)
     print("Successfully generated index.html")
+
+```
