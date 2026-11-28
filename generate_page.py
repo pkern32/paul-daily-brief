@@ -68,7 +68,8 @@ AIRDNA_LOVELAND_ADR = 178.0
 AIRDNA_LOVELAND_OCCUPANCY = 0.60
 AVG_DAYS_PER_MONTH = 365.25 / 12.0
 
-# STR expense assumptions
+# STR vacancy & expense assumptions
+STR_DEFAULT_VACANCY_RATE = 0.73
 STR_MGMT_FEE_RATE = 0.18
 STR_CLEANING_FEE_RATE = 0.22
 STR_BOOKING_FEE_RATE = 0.15
@@ -1067,6 +1068,7 @@ def compute_cash_flow_breakdown(listing, is_multifamily=False, down_payment_pct=
             "cash_flow": float("-inf"),
             "label": "Est. Cash Flow: N/A",
             "gross_rent": 0.0,
+            "vacancy_rate": STR_DEFAULT_VACANCY_RATE if is_str_strategy(listing) else 0.06,
             "mgmt_fee": 0.0,
             "cleaning_fee": 0.0,
             "booking_fee": 0.0,
@@ -1076,6 +1078,7 @@ def compute_cash_flow_breakdown(listing, is_multifamily=False, down_payment_pct=
             "pi": 0.0,
             "is_actual_tax": False,
             "rent_source": "N/A",
+            "is_str": False,
         }
 
     monthly_tax, is_actual_tax = estimate_monthly_tax(listing, price)
@@ -1083,15 +1086,18 @@ def compute_cash_flow_breakdown(listing, is_multifamily=False, down_payment_pct=
 
     if is_str_strategy(listing):
         gross_rent, has_custom_airdna = get_airdna_str_rent(listing, is_multifamily=is_multifamily)
-        mgmt_fee = gross_rent * STR_MGMT_FEE_RATE
-        cleaning_fee = gross_rent * STR_CLEANING_FEE_RATE
-        booking_fee = gross_rent * STR_BOOKING_FEE_RATE
-        other_opex = gross_rent * STR_OTHER_EXPENSE_RATE
+        vacancy_rate = STR_DEFAULT_VACANCY_RATE
+        effective_rent = gross_rent * (1.0 - vacancy_rate)
+        mgmt_fee = effective_rent * STR_MGMT_FEE_RATE
+        cleaning_fee = effective_rent * STR_CLEANING_FEE_RATE
+        booking_fee = effective_rent * STR_BOOKING_FEE_RATE
+        other_opex = effective_rent * STR_OTHER_EXPENSE_RATE
         monthly_insurance = (price * STR_ANNUAL_INSURANCE_RATE) / 12.0
 
         total_str_expenses = mgmt_fee + cleaning_fee + booking_fee + other_opex + monthly_insurance
-        cash_flow = gross_rent - total_str_expenses - monthly_tax - pi
+        cash_flow = effective_rent - total_str_expenses - monthly_tax - pi
         rent_source = "AirDNA Est." if has_custom_airdna else "AirDNA Loveland Avg"
+        is_str = True
     else:
         gross_rent, has_zillow_rent = get_zillow_ltr_rent(listing, is_multifamily=is_multifamily)
         vacancy_rate = 0.06 if is_multifamily else 0.05
@@ -1103,6 +1109,7 @@ def compute_cash_flow_breakdown(listing, is_multifamily=False, down_payment_pct=
         monthly_insurance = (price * STR_ANNUAL_INSURANCE_RATE) / 12.0
         cash_flow = gross_rent - booking_fee - other_opex - monthly_insurance - monthly_tax - pi
         rent_source = "Zillow Rent Est." if has_zillow_rent else "Zillow Rent Baseline"
+        is_str = False
 
     sign = "+" if cash_flow >= 0 else "-"
     tax_label = f"Actual Tax ${round(monthly_tax):,}/mo" if is_actual_tax else f"Est. Tax ${round(monthly_tax):,}/mo"
@@ -1111,6 +1118,7 @@ def compute_cash_flow_breakdown(listing, is_multifamily=False, down_payment_pct=
         "cash_flow": cash_flow,
         "label": label,
         "gross_rent": gross_rent,
+        "vacancy_rate": vacancy_rate,
         "mgmt_fee": mgmt_fee,
         "cleaning_fee": cleaning_fee,
         "booking_fee": booking_fee,
@@ -1120,6 +1128,7 @@ def compute_cash_flow_breakdown(listing, is_multifamily=False, down_payment_pct=
         "pi": pi,
         "is_actual_tax": is_actual_tax,
         "rent_source": rent_source,
+        "is_str": is_str,
     }
 
 
@@ -1319,7 +1328,9 @@ def render_ranked_property_list(ranked_listings, is_multifamily=False, empty_mes
         if not bd:
             bd = compute_cash_flow_breakdown(r, is_multifamily=is_multifamily)
         cf_label = r.get("_cash_flow_label") or bd["label"]
+        is_str = bool(bd.get("is_str"))
         gross_r = round(bd["gross_rent"])
+        vac_pct = round(bd.get("vacancy_rate", STR_DEFAULT_VACANCY_RATE if is_str else 0.06) * 100)
         mgmt_r = round(bd["mgmt_fee"])
         clean_r = round(bd["cleaning_fee"])
         book_r = round(bd["booking_fee"])
@@ -1331,8 +1342,17 @@ def render_ranked_property_list(ranked_listings, is_multifamily=False, empty_mes
         net_sign = "+" if net_r >= 0 else "-"
         net_formatted = f"{net_sign}${abs(net_r):,}/mo"
 
+        str_vacancy_field = ""
+        if is_str:
+            str_vacancy_field = f"""
+                            <label class="cf-field">
+                                <span>Vacancy (%)</span>
+                                <input type="number" step="1" min="0" max="100" value="{vac_pct}" data-cf-input="vacancy_pct">
+                            </label>
+            """
+
         rows.append(f"""
-        <li class="list-item property-item" data-cf-card>
+        <li class="list-item property-item" data-cf-card data-is-str="{"true" if is_str else "false"}">
             <div class="row-between">
                 <strong>#{idx} &bull; {link_tag(r.get('url'), esc(r.get('address')), r.get('url_verified', True))}</strong>
                 <span class="price">{esc(r.get('price'))}</span>
@@ -1350,6 +1370,7 @@ def render_ranked_property_list(ranked_listings, is_multifamily=False, empty_mes
                                 <span>Gross Monthly Rent ($)</span>
                                 <input type="number" step="25" min="0" value="{gross_r}" data-cf-input="gross_rent">
                             </label>
+                            {str_vacancy_field}
                             <label class="cf-field">
                                 <span>Property Mgmt ($/mo)</span>
                                 <input type="number" step="10" min="0" value="{mgmt_r}" data-cf-input="mgmt_fee">
@@ -1813,6 +1834,26 @@ def build_html(
                 return `${{sign}}$${{Math.abs(rounded).toLocaleString("en-US")}}/mo`;
             }}
 
+            function computeCardCashFlow(card, map) {{
+                const isStr = card.dataset.isStr === "true";
+                const grossRent = map.gross_rent || 0;
+                const fixedExpenses =
+                    (map.mgmt_fee || 0) +
+                    (map.cleaning_fee || 0) +
+                    (map.booking_fee || 0) +
+                    (map.other_opex || 0) +
+                    (map.monthly_insurance || 0) +
+                    (map.monthly_tax || 0) +
+                    (map.pi || 0);
+
+                if (isStr) {{
+                    const clampedVac = Math.min(100, Math.max(0, map.vacancy_pct || 0));
+                    const effectiveRent = grossRent * (1 - clampedVac / 100);
+                    return effectiveRent - fixedExpenses;
+                }}
+                return grossRent - fixedExpenses;
+            }}
+
             document.querySelectorAll("[data-cf-card]").forEach((card) => {{
                 const inputs = Array.from(card.querySelectorAll("[data-cf-input]"));
                 const netEl = card.querySelector("[data-cf-net]");
@@ -1830,23 +1871,17 @@ def build_html(
                     inputs.forEach((inp) => {{
                         map[inp.dataset.cfInput] = readNum(inp);
                     }});
-                    const grossRent = map.gross_rent || 0;
-                    const expenses =
-                        (map.mgmt_fee || 0) +
-                        (map.cleaning_fee || 0) +
-                        (map.booking_fee || 0) +
-                        (map.other_opex || 0) +
-                        (map.monthly_insurance || 0) +
-                        (map.monthly_tax || 0) +
-                        (map.pi || 0);
-                    const netCf = grossRent - expenses;
+                    const netCf = computeCardCashFlow(card, map);
                     const formatted = formatMonthlyCashFlow(netCf);
                     if (netEl) {{
                         netEl.textContent = formatted;
                     }}
                     if (badgeEl) {{
                         const taxRounded = Math.round(map.monthly_tax || 0).toLocaleString("en-US");
-                        badgeEl.textContent = `Est. Cash Flow: ${{formatted}} (Custom/Edited, Tax $${{taxRounded}}/mo)`;
+                        const vacSuffix = card.dataset.isStr === "true"
+                            ? `, Vac ${{(map.vacancy_pct || 0)}}%`
+                            : "";
+                        badgeEl.textContent = `Est. Cash Flow: ${{formatted}} (Custom/Edited${{vacSuffix}}, Tax $${{taxRounded}}/mo)`;
                     }}
                 }}
 
@@ -1857,21 +1892,15 @@ def build_html(
 
                 if (resetBtn) {{
                     resetBtn.addEventListener("click", () => {{
+                        const defaults = {{}};
                         inputs.forEach((inp) => {{
                             inp.value = inp.dataset.defaultVal;
+                            defaults[inp.dataset.cfInput] = readNum(inp);
                         }});
                         if (badgeEl && originalBadgeText) {{
                             badgeEl.textContent = originalBadgeText;
                         }}
-                        const initialNet = readNum(card.querySelector('[data-cf-input="gross_rent"]')) - (
-                            readNum(card.querySelector('[data-cf-input="mgmt_fee"]')) +
-                            readNum(card.querySelector('[data-cf-input="cleaning_fee"]')) +
-                            readNum(card.querySelector('[data-cf-input="booking_fee"]')) +
-                            readNum(card.querySelector('[data-cf-input="other_opex"]')) +
-                            readNum(card.querySelector('[data-cf-input="monthly_insurance"]')) +
-                            readNum(card.querySelector('[data-cf-input="monthly_tax"]')) +
-                            readNum(card.querySelector('[data-cf-input="pi"]'))
-                        );
+                        const initialNet = computeCardCashFlow(card, defaults);
                         if (netEl) {{
                             netEl.textContent = formatMonthlyCashFlow(initialNet);
                         }}
