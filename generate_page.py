@@ -906,7 +906,7 @@ def render_top_cash_flow_list(ranked_items):
             </div>
             <div class="meta-line">
                 <span class="badge deal-badge">{esc(entry.get('property_type'))}</span>
-                <span class="badge">{esc(r.get('strategy'))}</span>
+                <span class="badge">{esc(entry.get('strategy'))}</span>
                 <span class="badge">{esc(entry.get('cash_flow_label'))}</span>
             </div>
             <p>{esc(r.get('metrics_pitch'))}</p>
@@ -1235,6 +1235,63 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
 """
 
 
+def build_fallback_html(today_calendar_events=None, tomorrow_calendar_events=None, note="Awaiting next scheduled digest refresh."):
+    fallback_data = {
+        "events_this_month": [],
+        "events_next_month": [],
+        "sports": [],
+        "sports_news": [],
+        "single_family_homes": [],
+        "multifamily_homes": [],
+        "local_news": [
+            {
+                "headline": "Digest status notice",
+                "source": "Paul's Daily Brief",
+                "summary": note,
+                "url": "[https://www.google.com/search?q=Loveland+OH+local+news](https://www.google.com/search?q=Loveland+OH+local+news)",
+                "url_verified": False,
+            }
+        ],
+        "national_news": [],
+        "quote": {
+            "text": "What we have once enjoyed we can never lose; all that we love deeply becomes a part of us.",
+            "author": "Helen Keller",
+            "source_url": "[https://www.google.com/search?q=Helen+Keller+quote](https://www.google.com/search?q=Helen+Keller+quote)",
+            "url_verified": False,
+        },
+    }
+    return build_html(
+        fallback_data,
+        today_calendar_events=today_calendar_events,
+        tomorrow_calendar_events=tomorrow_calendar_events,
+    )
+
+
+def write_html_file(path, content):
+    parent = os.path.dirname(os.path.abspath(path))
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+def ensure_index_html_exists(path="index.html", today_calendar_events=None, tomorrow_calendar_events=None):
+    file_exists = os.path.isfile(path)
+    has_content = file_exists and os.path.getsize(path) > 0
+
+    if not has_content:
+        print(f"{path} did not exist or was empty; creating initial HTML page.")
+        fallback_html = build_fallback_html(
+            today_calendar_events=today_calendar_events,
+            tomorrow_calendar_events=tomorrow_calendar_events,
+            note="Initial page created automatically because index.html was missing. Will populate with live digest data.",
+        )
+        write_html_file(path, fallback_html)
+        return False
+
+    return True
+
+
 if __name__ == "__main__":
     today_calendar = [
         {"summary": "Paul Work Holiday", "time_label": "All Day (Nov 26–27)"},
@@ -1249,12 +1306,32 @@ if __name__ == "__main__":
         {"summary": "Eli lifeguard certification", "time_label": "9:00 AM – 4:00 PM EST"},
         {"summary": "Thanksgiving @ Pfarr", "time_label": "5:00 PM – 8:00 PM EST"},
     ]
-    digest_data = fetch_digest()
-    html_output = build_html(
-        digest_data,
+
+    output_path = "index.html"
+    existed_before = ensure_index_html_exists(
+        output_path,
         today_calendar_events=today_calendar,
         tomorrow_calendar_events=tomorrow_calendar,
     )
-    with open("index.html", "w", encoding="utf-8") as f:
-        f.write(html_output)
-    print("Successfully generated index.html")
+
+    try:
+        digest_data = fetch_digest()
+        html_output = build_html(
+            digest_data,
+            today_calendar_events=today_calendar,
+            tomorrow_calendar_events=tomorrow_calendar,
+        )
+        write_html_file(output_path, html_output)
+        print("Successfully generated index.html")
+    except Exception as exc:
+        print(f"Warning: digest generation failed ({exc}).")
+        if not existed_before or not os.path.isfile(output_path) or os.path.getsize(output_path) == 0:
+            fallback_html = build_fallback_html(
+                today_calendar_events=today_calendar,
+                tomorrow_calendar_events=tomorrow_calendar,
+                note=f"Live fetch failed ({exc}); keeping fallback page until next run.",
+            )
+            write_html_file(output_path, fallback_html)
+            print("Wrote fallback index.html so downstream steps can proceed.")
+        else:
+            print("Preserved existing index.html.")
