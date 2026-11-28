@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paul's Daily Brief</title>
+    <style>
+        :root {
+            --bg: #0c0d10;
+            --card: #16181d;
+            --text: #f3f4f6;
+            --muted: #9ca3af;
+            --accent: #d1d5db;
+            --link: #e5e7eb;
+            --border: #2a2e37;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container { max-width: 960px; margin: 0 auto; }
+        header {
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+        h1 { margin: 0; font-size: 1.75rem; color: var(--text); }
+        .updated { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+        .quote-box {
+            background: var(--card);
+            border-left: 4px solid var(--accent);
+            border-top: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 18px 22px;
+            border-radius: 8px;
+            margin-bottom: 22px;
+        }
+        .quote-box blockquote { margin: 0 0 8px 0; font-size: 1.1rem; font-style: italic; color: var(--text); }
+        .quote-box cite { color: var(--muted); font-size: 0.9rem; }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        .calendar-grid h2 {
+            margin-top: 8px;
+            margin-bottom: 10px;
+            font-size: 1.15rem;
+        }
+        h2 {
+            margin-top: 32px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+            color: var(--accent);
+        }
+        h3.subsection {
+            margin: 20px 0 12px 0;
+            font-size: 1.05rem;
+            color: var(--muted);
+        }
+        ul.item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        li.list-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+        }
+        li.news-row {
+            padding: 9px 14px;
+            margin-bottom: 8px;
+        }
+        details.news-item {
+            margin: 0;
+        }
+        summary.news-summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+        summary.news-summary::-webkit-details-marker {
+            display: none;
+        }
+        summary.news-summary::before {
+            content: "▸";
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: transform 0.15s ease;
+        }
+        details[open] > summary.news-summary::before {
+            content: "▾";
+            color: var(--text);
+        }
+        .news-title {
+            display: inline;
+        }
+        p.news-lead {
+            margin: 8px 0 2px 18px !important;
+            padding-top: 6px;
+            border-top: 1px solid var(--border);
+            font-size: 0.92rem !important;
+            color: var(--muted) !important;
+        }
+        li.calendar-item, li.event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            line-height: 1.35;
+        }
+        .cal-title {
+            font-weight: 600;
+            color: var(--text);
+        }
+        .cal-time, .event-time {
+            margin-right: 0;
+            white-space: nowrap;
+            font-size: 0.72rem;
+        }
+        li.list-item p { margin: 6px 0 0 0; font-size: 0.95rem; color: var(--text); }
+        .team-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.05rem;
+            color: var(--text);
+        }
+        .team-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 4px;
+            flex-shrink: 0;
+            display: block;
+        }
+        .meta-line { margin-top: 6px; }
+        .team-headline {
+            background: #1f222a;
+            border: 1px solid #373c47;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-top: 8px !important;
+            font-size: 0.92rem;
+            color: var(--text);
+        }
+        .row-between { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .badge {
+            display: inline-block;
+            background: #22262f;
+            color: var(--muted);
+            border: 1px solid #373c47;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+            margin-right: 4px;
+        }
+        .deal-badge {
+            background: #2c313c;
+            color: var(--text);
+        }
+        .search-tag {
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: normal;
+        }
+        .price { font-weight: 700; color: var(--accent); white-space: nowrap; }
+        .meta { color: var(--muted) !important; font-size: 0.88rem; }
+        a { color: var(--link); text-decoration: none; }
+        a:hover { color: #ffffff; text-decoration: underline; }
+        .source { color: var(--muted); font-size: 0.85rem; margin-left: 6px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Paul's Daily Brief</h1>
+            <div class="updated">Last refreshed: Friday, November 27, 2026 at 08:13 PM EST &bull; Auto-updates every 4 hours</div>
+        </header>
+
+        <section class="quote-box">
+            <blockquote>&ldquo;What we have once enjoyed we can never lose; all that we love deeply becomes a part of us.&rdquo;</blockquote>
+            <cite>&mdash; <a href="[https://www.google.com/search?q=Helen+Keller+quote](https://www.google.com/search?q=Helen+Keller+quote)" target="_blank" rel="noopener">Helen Keller</a> <span class='search-tag'>[Search]</span></cite>
+        </section>
+
+        <div class="calendar-grid">
+            <div>
+                <h2>Today's Calendar</h2>
+                <ul class="item-list">
+        <li class="list-item calendar-item">
+            <span class="cal-title">Paul Work Holiday</span>
+            <span class="badge cal-time">All Day (Nov 26–27)</span>
+        </li>
+    
+        <li class="list-item calendar-item">
+            <span class="cal-title">Marketplace pickup slack line $15</span>
+            <span class="badge cal-time">12:00 PM – 12:30 PM EST</span>
+        </li>
+    
+        <li class="list-item calendar-item">
+            <span class="cal-title">Eli no school</span>
+            <span class="badge cal-time">All Day (Nov 23–27)</span>
+        </li>
+    
+        <li class="list-item calendar-item">
+            <span class="cal-title">Lauren Thanksgiving break</span>
+            <span class="badge cal-time">All Day (Nov 25–27)</span>
+        </li>
+    
+        <li class="list-item calendar-item">
+            <span class="cal-title">Isaac/Tracy-Vegas</span>
+            <span class="badge cal-time">All Day (Nov 27–Dec 1)</span>
+        </li>
+    
+        <li class="list-item calendar-item">
+            <span class="cal-title">Isaac</span>
+            <span class="badge cal-time">Ongoing through 2:00 PM EST</span>
+        </li>
+    
+        <li class="list-item calendar-item">
+            <span class="cal-title">Sarah</span>
+            <span class="badge cal-time">2:00 PM EST – Nov 30, 2:00 PM EST</span>
+        </li>
+    </ul>
+            </div>
+            <div>
+                <h2>Tomorrow's Calendar</h2>
+                <ul class="item-list">
+        <li class="list-item calendar-item">
+            <span class="cal-title">Eli lifeguard certification</span>
+            <span class="badge cal-time">9:00 AM – 4:00 PM EST</span>
+        </li>
+    
+        <li class="list-item calendar-item">
+            <span class="cal-title">Thanksgiving @ Pfarr</span>
+            <span class="badge cal-time">5:00 PM – 8:00 PM EST</span>
+        </li>
+    </ul>
+            </div>
+        </div>
+
+        <h2>Minnesota Pro Sports</h2>
+        <ul class="item-list"></ul>
+
+        <h2>Top 5 Sports Headlines (ESPN)</h2>
+        <ul class="item-list"></ul>
+
+        <h2>Top 5 Local News (45140 / Greater Cincinnati)</h2>
+        <ul class="item-list">
+        <li class="list-item news-row">
+            <details class="news-item">
+                <summary class="news-summary">
+                    <span class="news-title">
+                        <strong><a href="[https://www.google.com/search?q=Loveland+OH+local+news](https://www.google.com/search?q=Loveland+OH+local+news)" target="_blank" rel="noopener">Digest status notice</a> <span class='search-tag'>[Search]</span></strong>
+                        <span class="source">(Paul&#x27;s Daily Brief)</span>
+                    </span>
+                </summary>
+                <p class="news-lead">Live fetch failed (404 NOT_FOUND. {&#x27;error&#x27;: {&#x27;code&#x27;: 404, &#x27;message&#x27;: &#x27;models/gemini-3-flash-preview is not found for API version v1, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.&#x27;, &#x27;status&#x27;: &#x27;NOT_FOUND&#x27;}}); keeping fallback page until next run.</p>
+            </details>
+        </li>
+    </ul>
+
+        <h2>Top 5 National News (Neutral Sources)</h2>
+        <ul class="item-list"></ul>
+
+        <h2>45140 Area Investment Real Estate</h2>
+        <h3 class="subsection">Top 10 Cash-Flowing Properties (Ranked by Monthly Cash Flow)</h3>
+        <ul class="item-list"><li class="list-item"><span class="meta">No cash flow estimates available.</span></li></ul>
+
+        <h3 class="subsection">Single-Family Homes (10 Listings &bull; Max $500,000 &bull; New &amp; Value Deals)</h3>
+        <ul class="item-list"></ul>
+
+        <h3 class="subsection">Multifamily Properties (10 Listings &bull; Max $1,500,000 &bull; New &amp; Value Deals)</h3>
+        <ul class="item-list"></ul>
+
+        <h2>Top 20 Events Near 45140</h2>
+        <h3 class="subsection">This Month (November 2026)</h3>
+        <ul class="item-list"><li class="list-item event-item"><span class="meta">No upcoming events listed.</span></li></ul>
+
+        <h3 class="subsection">Next Month (December 2026)</h3>
+        <ul class="item-list"><li class="list-item event-item"><span class="meta">No upcoming events listed.</span></li></ul>
+    </div>
+</body>
+</html>
