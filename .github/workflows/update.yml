@@ -2,65 +2,91 @@ name: Update Daily Digest
 
 on:
   schedule:
-    - cron: '0 */4 * * *'
+    - cron: "0 */4 * * *"
+  push:
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
   contents: write
   pages: write
   id-token: write
+  actions: write
 
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: pip install google-genai requests
 
-      - name: Generate updated HTML
+      - name: Generate index.html
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ICAL_URL: ${{ secrets.ICAL_URL }}
         run: python generate_page.py
 
-      - name: Commit and push updated page
+      - name: Commit and push updated index.html
+        if: github.event_name != 'push'
         run: |
           if [ -f index.html ]; then
             git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add index.html
-            git diff --quiet && git diff --staged --quiet || (git commit -m "Update digest" && git push)
-          else
-            echo "index.html missing after generation step."
-            exit 1
+            if ! git diff --cached --quiet; then
+              git commit -m "Update digest"
+              for attempt in 1 2 3; do
+                if git push origin main; then
+                  break
+                fi
+                git pull --rebase --autostash origin main
+              done
+            fi
           fi
 
-      - name: Stage site artifact
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Remove prior github-pages artifacts on retry
+        if: github.run_attempt > 1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          rm -rf _site
-          mkdir -p _site
-          cp index.html _site/index.html
-          ls -la _site
+          gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+            --jq '.artifacts[] | select(.name == "github-pages" or (.name | startswith("github-pages-"))) | .id' | \
+          while read -r artifact_id; do
+            gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/${artifact_id}"
+          done
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: '_site'
+          path: "."
+          artifact-name: github-pages-${{ github.run_attempt }}
 
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact-name: github-pages-${{ github.run_attempt }}
