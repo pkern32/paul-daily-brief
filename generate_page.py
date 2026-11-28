@@ -824,7 +824,7 @@ def extract_json_object(raw_text):
 def fetch_digest():
     genai_client = get_genai_client()
     response = genai_client.models.generate_content(
-        model="gemini-4-carbon",
+        model="gemini-4-hydrogen",
         contents=build_prompt(),
         config=types.GenerateContentConfig(
             tools=[{"google_search": {}}],
