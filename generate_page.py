@@ -9,9 +9,6 @@ import requests
 from google import genai
 from google.genai import types
 
-# Initialize Gemini Client (reads GEMINI_API_KEY from environment)
-client = genai.Client()
-
 TEAM_LOGOS = {
     "Minnesota Twins": "https://a.espncdn.com/i/teamlogos/mlb/500/min.png",
     "Minnesota Vikings": "https://a.espncdn.com/i/teamlogos/nfl/500/min.png",
@@ -86,6 +83,13 @@ STOPWORDS = {
 }
 
 _RESOLVED_LOGO_CACHE = {}
+
+
+def get_genai_client():
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if api_key:
+        return genai.Client(api_key=api_key)
+    return genai.Client()
 
 
 def get_team_logo_url(team_name):
@@ -818,7 +822,8 @@ def extract_json_object(raw_text):
 
 
 def fetch_digest():
-    response = client.models.generate_content(
+    genai_client = get_genai_client()
+    response = genai_client.models.generate_content(
         model="gemini-3-flash-preview",
         contents=build_prompt(),
         config=types.GenerateContentConfig(
@@ -1235,7 +1240,11 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
 """
 
 
-def build_fallback_html(today_calendar_events=None, tomorrow_calendar_events=None, note="Awaiting next scheduled digest refresh."):
+def build_fallback_html(
+    today_calendar_events=None,
+    tomorrow_calendar_events=None,
+    note="Awaiting next scheduled digest refresh.",
+):
     fallback_data = {
         "events_this_month": [],
         "events_next_month": [],
@@ -1275,7 +1284,11 @@ def write_html_file(path, content):
         f.write(content)
 
 
-def ensure_index_html_exists(path="index.html", today_calendar_events=None, tomorrow_calendar_events=None):
+def ensure_index_html_exists(
+    path="index.html",
+    today_calendar_events=None,
+    tomorrow_calendar_events=None,
+):
     file_exists = os.path.isfile(path)
     has_content = file_exists and os.path.getsize(path) > 0
 
