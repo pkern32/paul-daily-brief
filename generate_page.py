@@ -3,7 +3,8 @@ import re
 import json
 import html
 import urllib.parse
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 import requests
 from google import genai
@@ -67,6 +68,16 @@ AIRDNA_LOVELAND_ADR = 178.0
 AIRDNA_LOVELAND_OCCUPANCY = 0.60
 AVG_DAYS_PER_MONTH = 365.25 / 12.0
 
+# STR expense assumptions
+STR_MGMT_FEE_RATE = 0.18
+STR_CLEANING_FEE_RATE = 0.22
+STR_BOOKING_FEE_RATE = 0.15
+STR_OTHER_EXPENSE_RATE = 0.05
+STR_ANNUAL_INSURANCE_RATE = 0.01
+
+# News recency window (past 24 hours)
+MAX_NEWS_AGE = timedelta(hours=24)
+
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -83,6 +94,185 @@ STOPWORDS = {
 }
 
 _RESOLVED_LOGO_CACHE = {}
+
+
+def get_et_now():
+    return datetime.now(ZoneInfo("America/New_York"))
+
+
+def parse_timestamp_utc(raw_ts):
+    if raw_ts is None:
+        return None
+    if isinstance(raw_ts, datetime):
+        dt = raw_ts
+        return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+
+    s = str(raw_ts).strip()
+    if not s:
+        return None
+
+    rel_match = re.fullmatch(
+        r"(\d+(?:\.\d+)?)\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days)\s*(?:ago)?",
+        s.lower(),
+    )
+    if rel_match:
+        val = float(rel_match.group(1))
+        unit = rel_match.group(2)
+        now_utc = datetime.now(timezone.utc)
+        if unit.startswith("s"):
+            return now_utc - timedelta(seconds=val)
+        if unit.startswith("m"):
+            return now_utc - timedelta(minutes=val)
+        if unit.startswith("h"):
+            return now_utc - timedelta(hours=val)
+        if unit.startswith("d"):
+            return now_utc - timedelta(days=val)
+
+    iso_candidate = s[:-1] + "+00:00" if s.endswith("Z") else s
+    try:
+        dt = datetime.fromisoformat(iso_candidate)
+        return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+    except ValueError:
+        pass
+
+    try:
+        dt = parsedate_to_datetime(s)
+        return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+    except Exception:
+        pass
+
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%b %d, %Y %I:%M %p"):
+        try:
+            dt = datetime.strptime(s, fmt).replace(tzinfo=ZoneInfo("America/New_York"))
+            return dt.astimezone(timezone.utc)
+        except ValueError:
+            continue
+
+    return None
+
+
+def is_within_past_24_hours(raw_ts, now_utc=None, require_timestamp=True):
+    ref_now = now_utc or datetime.now(timezone.utc)
+    dt_utc = parse_timestamp_utc(raw_ts)
+    if dt_utc is None:
+        return not require_timestamp
+    age = ref_now - dt_utc
+    return timedelta(minutes=-15) <= age <= MAX_NEWS_AGE
+
+
+def filter_recent_news(items, max_items=5, require_timestamp=True):
+    now_utc = datetime.now(timezone.utc)
+    recent = []
+    for item in (items or []):
+        ts_val = (
+            item.get("published_at")
+            or item.get("published")
+            or item.get("pubDate")
+            or item.get("timestamp")
+            or item.get("time_text")
+        )
+        if is_within_past_24_hours(ts_val, now_utc=now_utc, require_timestamp=require_timestamp):
+            recent.append(item)
+            if len(recent) >= max_items:
+                break
+    return recent
+
+
+def parse_ical_dt(raw_val, tz_name="America/New_York"):
+    val = str(raw_val or "").strip()
+    local_tz = ZoneInfo(tz_name)
+    if re.fullmatch(r"\d{8}", val):
+        d = datetime.strptime(val, "%Y%m%d").date()
+        return d, d, True
+    if val.endswith("Z"):
+        dt_utc = datetime.strptime(val, "%Y%m%dT%H%M%SZ").replace(tzinfo=ZoneInfo("UTC"))
+        dt_local = dt_utc.astimezone(local_tz)
+        return dt_local.date(), dt_local, False
+    match = re.fullmatch(r"(\d{8})T(\d{6})", val)
+    if match:
+        dt_local = datetime.strptime(f"{match.group(1)}{match.group(2)}", "%Y%m%d%H%M%S").replace(tzinfo=local_tz)
+        return dt_local.date(), dt_local, False
+    return None, None, False
+
+
+def fetch_ical_events_for_target_date(ical_url, target_date):
+    if not ical_url:
+        return []
+    try:
+        resp = requests.get(ical_url, headers=HEADERS, timeout=10)
+        if resp.status_code != 200 or not resp.text:
+            return []
+    except Exception:
+        return []
+
+    unfolded = re.sub(r"\r?\n[ \t]", "", resp.text)
+    blocks = re.findall(r"BEGIN:VEVENT(.*?)END:VEVENT", unfolded, flags=re.S)
+    events = []
+
+    for block in blocks:
+        summary_m = re.search(r"^SUMMARY[^:]*:(.*)$", block, flags=re.M)
+        dtstart_m = re.search(r"^DTSTART([^:]*):(.*)$", block, flags=re.M)
+        dtend_m = re.search(r"^DTEND([^:]*):(.*)$", block, flags=re.M)
+        if not summary_m or not dtstart_m:
+            continue
+
+        summary = summary_m.group(1).strip().replace("\\,", ",").replace("\\;", ";")
+        start_date, start_obj, is_all_day = parse_ical_dt(dtstart_m.group(2))
+        if not start_date:
+            continue
+
+        end_date = start_date
+        end_obj = None
+        if dtend_m:
+            parsed_end_date, parsed_end_obj, _ = parse_ical_dt(dtend_m.group(2))
+            if parsed_end_date:
+                end_obj = parsed_end_obj
+                if is_all_day and parsed_end_date > start_date:
+                    end_date = parsed_end_date - timedelta(days=1)
+                else:
+                    end_date = parsed_end_date
+
+        if start_date <= target_date <= end_date:
+            if is_all_day:
+                if start_date == end_date:
+                    time_label = f"All Day ({start_date.strftime('%b %d')})"
+                else:
+                    time_label = f"All Day ({start_date.strftime('%b %d')}–{end_date.strftime('%b %d')})"
+            else:
+                start_str = start_obj.strftime("%I:%M %p %Z").lstrip("0")
+                if end_obj and end_obj.date() == start_date:
+                    end_str = end_obj.strftime("%I:%M %p %Z").lstrip("0")
+                    time_label = f"{start_str} – {end_str}"
+                elif end_obj:
+                    end_str = end_obj.strftime("%b %d, %I:%M %p %Z")
+                    time_label = f"{start_str} – {end_str}"
+                else:
+                    time_label = start_str
+
+            events.append({"summary": summary, "time_label": time_label})
+
+    return events
+
+
+def get_calendar_events_for_day(target_date, sample_dated_events=None):
+    ical_url = os.environ.get("ICAL_URL", "").strip()
+    if ical_url:
+        return fetch_ical_events_for_target_date(ical_url, target_date)
+
+    matched = []
+    for item in (sample_dated_events or []):
+        start_d = item.get("start_date")
+        end_d = item.get("end_date") or start_d
+        if isinstance(start_d, str):
+            start_d = date.fromisoformat(start_d)
+        if isinstance(end_d, str):
+            end_d = date.fromisoformat(end_d)
+        if start_d and end_d and start_d <= target_date <= end_d:
+            matched.append({
+                "summary": item.get("summary", ""),
+                "time_label": item.get("time_label", ""),
+            })
+    return matched
 
 
 def get_genai_client():
@@ -129,7 +319,7 @@ def get_team_logo_url(team_name):
 
 
 def get_month_labels():
-    now = datetime.now(ZoneInfo("America/New_York"))
+    now = get_et_now()
     current_month = now.strftime("%B %Y")
     if now.month == 12:
         next_dt = now.replace(year=now.year + 1, month=1, day=1)
@@ -142,15 +332,17 @@ def get_month_labels():
 
 def build_prompt():
     today_str, current_month, next_month = get_month_labels()
+    cutoff_utc = (datetime.now(timezone.utc) - MAX_NEWS_AGE).strftime("%Y-%m-%dT%H:%M:%SZ")
     return f"""
 You are generating a personal 4-hour digest for someone in their 40s/50s living in Loveland, OH (ZIP 45140).
 Today's date is {today_str}. Current month is {current_month}; next month is {next_month}.
+Current UTC time is {datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}. Any news story MUST have been published on or after {cutoff_utc} (strictly within the past 24 hours).
 Use Google Search to find current, real-time information as of today.
 
 CRITICAL URL RULES:
 - Every URL MUST be copied verbatim from your Google Search grounding results. Never guess, construct, or shorten URLs.
 - Every URL must point directly to the specific article, box score, schedule, property listing, or event page—NEVER to a site homepage or generic section root.
-- For every item in "sports_news", "url" MUST be an ESPN.com URL (from www.espn.com) pointing to that specific ESPN sports story, and "source" MUST be "ESPN". Search specifically on espn.com for today's top sports headlines.
+- For every item in "sports_news", "url" MUST be an ESPN.com URL (from www.espn.com) pointing to that specific ESPN sports story, and "source" MUST be "ESPN". Search specifically on espn.com for sports headlines published in the past 24 hours.
 - For every item in "single_family_homes" and "multifamily_homes", "url" MUST be a Zillow.com listing URL (from www.zillow.com, such as a /homedetails/ property page) found via Google Search on zillow.com. Search specifically on site:zillow.com for active listings in 45140 and nearby communities.
 
 Return ONLY valid JSON matching this exact schema (no markdown fences, no extra text):
@@ -193,6 +385,7 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
     {{
       "headline": "ESPN Sports Headline",
       "source": "ESPN",
+      "published_at": "ISO 8601 UTC timestamp within past 24 hours (e.g., 2026-11-28T06:30:00Z)",
       "summary": "2-sentence objective summary of the ESPN sports story",
       "url": "https://www.espn.com/..."
     }}
@@ -205,9 +398,8 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
       "zillow_rent_estimate": "$X,XXX",
       "airdna_adr": "$XXX",
       "airdna_occupancy": "60%",
-      "listing_status": "New Listing | Price Cut / Value Deal",
       "strategy": "Short-Term Rental (Airbnb) | Long-Term Rental | Value-Add",
-      "metrics_pitch": "Beds/baths/sqft, days on market or recent price cut details, and rental/equity upside near Loveland bike trail, downtown, or commuter routes",
+      "metrics_pitch": "Beds/baths/sqft, property notes, and rental/equity upside near Loveland bike trail, downtown, or commuter routes",
       "url": "https://www.zillow.com/homedetails/..."
     }}
   ],
@@ -219,9 +411,8 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
       "zillow_rent_estimate": "$X,XXX",
       "airdna_adr": "$XXX",
       "airdna_occupancy": "60%",
-      "listing_status": "New Listing | Price Cut / Value Deal",
       "strategy": "Duplex | Triplex | Quadplex | Small Apartment Building",
-      "metrics_pitch": "Unit count, total beds/baths/sqft, days on market or price drop, and estimated gross rent/cap rate angle",
+      "metrics_pitch": "Unit count, total beds/baths/sqft, and estimated gross rent/cash-flow angle",
       "url": "https://www.zillow.com/homedetails/..."
     }}
   ],
@@ -229,6 +420,7 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
     {{
       "headline": "Headline",
       "source": "Neutral source name (e.g., Loveland Local News, WLWT, WKRC, WVXU, AP)",
+      "published_at": "ISO 8601 UTC timestamp within past 24 hours (e.g., 2026-11-28T07:00:00Z)",
       "summary": "2-sentence objective summary",
       "url": "https://..."
     }}
@@ -237,6 +429,7 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
     {{
       "headline": "Headline",
       "source": "Politically neutral source (e.g., Associated Press, Reuters, PBS NewsHour, NPR, Straight Arrow News)",
+      "published_at": "ISO 8601 UTC timestamp within past 24 hours (e.g., 2026-11-28T05:15:00Z)",
       "summary": "2-sentence objective summary",
       "url": "https://..."
     }}
@@ -252,11 +445,11 @@ Strict Requirements:
 1. "events_this_month": Top 10 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in the remainder of {current_month} (on or after {today_str}) spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
 2. "events_next_month": Top 10 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in {next_month} spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
 3. "sports": Cover ONLY these 4 Minnesota pro teams: Minnesota Twins, Minnesota Vikings, Minnesota Wild, and Minnesota Timberwolves. Include each team's single top current news headline with source and direct article URL, plus ONLY final score and top performers for the most recent completed game, an ESPN.com box score URL ("box_score_url" on espn.com), and direct team schedule URL.
-4. "sports_news": Top 5 major sports headlines today sourced strictly from ESPN.com ("source": "ESPN", with direct "url" links on www.espn.com).
-5. "single_family_homes": Exactly 10 active for-sale single-family homes on Zillow.com in 45140 (or immediately adjacent Loveland/Maineville/Milford) with a STRICT MAXIMUM asking price of $500,000. Focus specifically on brand-new listings OR older listings with recent price cuts / strong value-per-sqft deals suitable for STR (Airbnb) or LTR investment. Every "url" MUST be on zillow.com.
-6. "multifamily_homes": Exactly 10 active for-sale multifamily properties (duplex, triplex, quadplex, or small multifamily) on Zillow.com in 45140 or immediately adjacent Greater Cincinnati communities (e.g., Milford, Mason, Lebanon, Northeast Cincinnati) with a STRICT MAXIMUM asking price of $1,500,000. Focus specifically on brand-new listings OR older listings with recent price cuts / strong cashflow potential. Every "url" MUST be on zillow.com.
-7. "local_news": Top 5 local news stories near Loveland / Warren, Clermont, and Hamilton counties from neutral, fact-based outlets (e.g., Loveland Local News, WLWT, WVXU).
-8. "national_news": Top 5 US national stories strictly from politically neutral wire/public outlets (Associated Press, Reuters, PBS, NPR).
+4. "sports_news": Up to 5 major sports headlines published strictly within the past 24 hours (after {cutoff_utc}) sourced strictly from ESPN.com ("source": "ESPN", with direct "url" links on www.espn.com and accurate UTC "published_at"). Omit any story older than 24 hours.
+5. "single_family_homes": Top 10 active for-sale single-family homes on Zillow.com in 45140 (or immediately adjacent Loveland/Maineville/Milford) with a STRICT MAXIMUM asking price of $500,000 suitable for STR (Airbnb) or LTR investment. Every "url" MUST be on zillow.com.
+6. "multifamily_homes": Top 10 active for-sale multifamily properties (duplex, triplex, quadplex, or small multifamily) on Zillow.com in 45140 or immediately adjacent Greater Cincinnati communities (e.g., Milford, Mason, Lebanon, Northeast Cincinnati) with a STRICT MAXIMUM asking price of $1,500,000 suitable for rental cash flow. Every "url" MUST be on zillow.com.
+7. "local_news": Up to 5 local news stories near Loveland / Warren, Clermont, and Hamilton counties published strictly within the past 24 hours (after {cutoff_utc}) from neutral, fact-based outlets (e.g., Loveland Local News, WLWT, WVXU) with accurate UTC "published_at". Omit any story older than 24 hours.
+8. "national_news": Up to 5 US national stories published strictly within the past 24 hours (after {cutoff_utc}) from politically neutral wire/public outlets (Associated Press, Reuters, PBS, NPR) with accurate UTC "published_at". Omit any story older than 24 hours.
 9. "quote": 1 deeply comforting, uplifting quote about enduring loss and carrying love forward.
 """
 
@@ -323,10 +516,11 @@ def extract_espn_article_url(article_obj):
     return ""
 
 
-def fetch_espn_news_items(sport, league, team_id=None, limit=15):
+def fetch_espn_news_items(sport, league, team_id=None, limit=15, only_past_24h=False):
     url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/news?limit={limit}"
     if team_id:
         url += f"&team={urllib.parse.quote_plus(str(team_id))}"
+    now_utc = datetime.now(timezone.utc)
     try:
         resp = requests.get(url, headers=HEADERS, timeout=6)
         if resp.status_code != 200:
@@ -335,12 +529,17 @@ def fetch_espn_news_items(sport, league, team_id=None, limit=15):
         items = []
         for art in payload.get("articles", []):
             art_url = extract_espn_article_url(art)
-            if art_url:
-                items.append({
-                    "headline": str(art.get("headline") or "").strip(),
-                    "description": str(art.get("description") or "").strip(),
-                    "url": art_url,
-                })
+            if not art_url:
+                continue
+            pub_raw = str(art.get("published") or art.get("lastModified") or "").strip()
+            if only_past_24h and not is_within_past_24_hours(pub_raw, now_utc=now_utc, require_timestamp=True):
+                continue
+            items.append({
+                "headline": str(art.get("headline") or "").strip(),
+                "description": str(art.get("description") or "").strip(),
+                "published_at": pub_raw,
+                "url": art_url,
+            })
         return items
     except Exception:
         return []
@@ -368,8 +567,9 @@ def best_espn_match(query_text, candidates, fallback_url):
 def get_espn_top_sports_news(gemini_sports_news):
     pool = []
     for sport, league, _ in ESPN_LEAGUE_FEEDS:
-        pool.extend(fetch_espn_news_items(sport, league, limit=6))
+        pool.extend(fetch_espn_news_items(sport, league, limit=10, only_past_24h=True))
 
+    now_utc = datetime.now(timezone.utc)
     results = []
     used_urls = set()
 
@@ -377,22 +577,44 @@ def get_espn_top_sports_news(gemini_sports_news):
         headline = str(item.get("headline") or "").strip()
         summary = str(item.get("summary") or "").strip()
         cand = str(item.get("url") or "").strip()
+        pub_at = str(item.get("published_at") or "").strip()
 
-        if cand and is_espn_domain(cand) and cand not in used_urls:
-            resolved_url = cand
-        else:
-            available = [p for p in pool if p["url"] not in used_urls] or pool
-            resolved_url = best_espn_match(
-                f"{headline} {summary}",
-                available,
-                "https://www.espn.com/",
-            )
+        matched_pool_item = None
+        if cand and is_espn_domain(cand):
+            matched_pool_item = next((p for p in pool if p["url"] == cand), None)
+        if matched_pool_item is None and pool:
+            q_words = set(extract_keywords(f"{headline} {summary}"))
+            best_p = None
+            best_score = 0
+            for p in pool:
+                if p["url"] in used_urls:
+                    continue
+                haystack = f"{p.get('headline', '')} {p.get('description', '')}".lower()
+                score = sum(1 for w in q_words if w in haystack)
+                if score > best_score:
+                    best_score = score
+                    best_p = p
+            if best_p and best_score > 0:
+                matched_pool_item = best_p
 
+        effective_ts = matched_pool_item["published_at"] if matched_pool_item else pub_at
+        if not is_within_past_24_hours(effective_ts, now_utc=now_utc, require_timestamp=True):
+            continue
+
+        resolved_url = (
+            matched_pool_item["url"]
+            if matched_pool_item
+            else (cand if cand and is_espn_domain(cand) else "https://www.espn.com/")
+        )
+        if resolved_url in used_urls:
+            continue
         used_urls.add(resolved_url)
+
         results.append({
-            "headline": headline or "ESPN Top Sports Story",
+            "headline": headline or (matched_pool_item["headline"] if matched_pool_item else "ESPN Sports Story"),
             "source": "ESPN",
-            "summary": summary,
+            "published_at": effective_ts,
+            "summary": summary or (matched_pool_item["description"] if matched_pool_item else ""),
             "url": resolved_url,
             "url_verified": is_espn_domain(resolved_url),
         })
@@ -402,12 +624,13 @@ def get_espn_top_sports_news(gemini_sports_news):
             results.append({
                 "headline": p["headline"],
                 "source": "ESPN",
+                "published_at": p["published_at"],
                 "summary": p["description"],
                 "url": p["url"],
                 "url_verified": True,
             })
 
-    return results
+    return results[:5]
 
 
 def get_espn_team_headline_url(team_name, headline_text, candidate_url=""):
@@ -440,7 +663,7 @@ def get_espn_box_score_url(team_name, candidate_url=""):
     espn_slug = cfg["espn_slug"]
     aliases = cfg["aliases"]
 
-    now_et = datetime.now(ZoneInfo("America/New_York"))
+    now_et = get_et_now()
     for days_ago in range(0, 11):
         date_str = (now_et - timedelta(days=days_ago)).strftime("%Y%m%d")
         api_url = f"https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboard?dates={date_str}"
@@ -590,8 +813,28 @@ def parse_percentage(val, default_val):
     return num / 100.0 if num > 1.0 else num
 
 
+def get_actual_annual_tax(listing):
+    for key in ("annual_tax_paid", "property_tax_annual", "annual_property_tax"):
+        val = parse_price_number(listing.get(key))
+        if val > 0:
+            return val
+
+    pitch = str(listing.get("metrics_pitch") or "")
+    tax_match = re.search(
+        r"(?:actual\s+)?(?:property\s+)?tax(?:es)?(?:\s+paid)?[^\d$]*\$?\s*([\d,]+)(?:\s*/\s*yr|\s+per\s+year|\s+annually)?",
+        pitch,
+        re.I,
+    )
+    if tax_match:
+        val = parse_price_number(tax_match.group(1))
+        if val > 0:
+            return val
+
+    return 0.0
+
+
 def estimate_monthly_tax(listing, price):
-    actual_annual_tax = parse_price_number(listing.get("annual_tax_paid"))
+    actual_annual_tax = get_actual_annual_tax(listing)
     if actual_annual_tax > 0:
         return actual_annual_tax / 12.0, True
 
@@ -672,77 +915,62 @@ def is_str_strategy(listing):
     )
 
 
-def estimate_monthly_cash_flow_details(listing, is_multifamily=False, down_payment_pct=0.20, annual_rate=0.073):
+def calculate_monthly_pi(price, down_payment_pct=0.20, annual_rate=0.0721):
+    loan_amount = price * (1.0 - down_payment_pct)
+    monthly_rate = annual_rate / 12.0
+    n_payments = 360
+    if monthly_rate > 0:
+        return loan_amount * (monthly_rate * (1 + monthly_rate) ** n_payments) / (
+            (1 + monthly_rate) ** n_payments - 1
+        )
+    return loan_amount / n_payments
+
+
+def estimate_monthly_cash_flow_details(listing, is_multifamily=False, down_payment_pct=0.20, annual_rate=0.0721):
     price = parse_price_number(listing.get("price"))
     if price <= 0:
-        return None, "Est. Cash Flow: N/A"
+        return float("-inf"), "Est. Cash Flow: N/A"
+
+    monthly_tax, is_actual_tax = estimate_monthly_tax(listing, price)
+    pi = calculate_monthly_pi(price, down_payment_pct=down_payment_pct, annual_rate=annual_rate)
 
     if is_str_strategy(listing):
         gross_rent, has_custom_airdna = get_airdna_str_rent(listing, is_multifamily=is_multifamily)
-        vacancy_rate = 0.15
-        non_tax_opex_rate = 0.28
+        mgmt_fee = gross_rent * STR_MGMT_FEE_RATE
+        cleaning_fee = gross_rent * STR_CLEANING_FEE_RATE
+        booking_fee = gross_rent * STR_BOOKING_FEE_RATE
+        other_opex = gross_rent * STR_OTHER_EXPENSE_RATE
+        monthly_insurance = (price * STR_ANNUAL_INSURANCE_RATE) / 12.0
+
+        total_str_expenses = mgmt_fee + cleaning_fee + booking_fee + other_opex + monthly_insurance
+        cash_flow = gross_rent - total_str_expenses - monthly_tax - pi
         rent_source = "AirDNA Est." if has_custom_airdna else "AirDNA Loveland Avg"
     else:
         gross_rent, has_zillow_rent = get_zillow_ltr_rent(listing, is_multifamily=is_multifamily)
         vacancy_rate = 0.06 if is_multifamily else 0.05
         non_tax_opex_rate = 0.24 if is_multifamily else 0.22
+        effective_rent = gross_rent * (1.0 - vacancy_rate)
+        other_opex = gross_rent * non_tax_opex_rate
+        cash_flow = effective_rent - monthly_tax - other_opex - pi
         rent_source = "Zillow Rent Est." if has_zillow_rent else "Zillow Rent Baseline"
 
-    monthly_tax, is_actual_tax = estimate_monthly_tax(listing, price)
-    effective_rent = gross_rent * (1.0 - vacancy_rate)
-    other_opex = gross_rent * non_tax_opex_rate
-
-    loan_amount = price * (1.0 - down_payment_pct)
-    monthly_rate = annual_rate / 12.0
-    n_payments = 360
-    if monthly_rate > 0:
-        pi = loan_amount * (monthly_rate * (1 + monthly_rate) ** n_payments) / (
-            (1 + monthly_rate) ** n_payments - 1
-        )
-    else:
-        pi = loan_amount / n_payments
-
-    cash_flow = effective_rent - monthly_tax - other_opex - pi
     sign = "+" if cash_flow >= 0 else "-"
     tax_label = f"Actual Tax ${round(monthly_tax):,}/mo" if is_actual_tax else f"Est. Tax ${round(monthly_tax):,}/mo"
     label = f"Est. Cash Flow: {sign}${abs(round(cash_flow)):,}/mo ({rent_source}, {tax_label})"
     return cash_flow, label
 
 
-def estimate_monthly_cash_flow(listing, is_multifamily=False, down_payment_pct=0.20, annual_rate=0.073):
-    _, label = estimate_monthly_cash_flow_details(
-        listing,
-        is_multifamily=is_multifamily,
-        down_payment_pct=down_payment_pct,
-        annual_rate=annual_rate,
-    )
-    return label
+def rank_top_cash_flow_by_type(listings, is_multifamily=False, top_n=10):
+    ranked = []
+    for item in (listings or []):
+        cf_val, cf_label = estimate_monthly_cash_flow_details(item, is_multifamily=is_multifamily)
+        enriched = dict(item)
+        enriched["_cash_flow_value"] = cf_val
+        enriched["_cash_flow_label"] = cf_label
+        ranked.append(enriched)
 
-
-def rank_top_cash_flow_properties(sfh_listings, mfh_listings, top_n=10):
-    candidates = []
-    for item in (sfh_listings or [])[:10]:
-        cf_val, cf_label = estimate_monthly_cash_flow_details(item, is_multifamily=False)
-        if cf_val is not None:
-            candidates.append({
-                "listing": item,
-                "property_type": "Single-Family",
-                "cash_flow_value": cf_val,
-                "cash_flow_label": cf_label,
-            })
-
-    for item in (mfh_listings or [])[:10]:
-        cf_val, cf_label = estimate_monthly_cash_flow_details(item, is_multifamily=True)
-        if cf_val is not None:
-            candidates.append({
-                "listing": item,
-                "property_type": "Multifamily",
-                "cash_flow_value": cf_val,
-                "cash_flow_label": cf_label,
-            })
-
-    candidates.sort(key=lambda x: x["cash_flow_value"], reverse=True)
-    return candidates[:top_n]
+    ranked.sort(key=lambda x: x["_cash_flow_value"], reverse=True)
+    return ranked[:top_n]
 
 
 def validate_digest_links(data, grounding_urls):
@@ -788,15 +1016,19 @@ def validate_digest_links(data, grounding_urls):
                 r.get("address", ""), r.get("url", ""), grounding_urls
             )
 
-    for n in data.get("local_news", []):
+    recent_local = filter_recent_news(data.get("local_news", []), max_items=5, require_timestamp=True)
+    for n in recent_local:
         n["url"], n["url_verified"] = verify_link(
             n.get("url"), f"{n.get('headline', '')} {n.get('source', '')}", grounding_urls
         )
+    data["local_news"] = recent_local
 
-    for n in data.get("national_news", []):
+    recent_national = filter_recent_news(data.get("national_news", []), max_items=5, require_timestamp=True)
+    for n in recent_national:
         n["url"], n["url_verified"] = verify_link(
             n.get("url"), f"{n.get('headline', '')} {n.get('source', '')}", grounding_urls
         )
+    data["national_news"] = recent_national
 
     q = data.get("quote", {})
     if q:
@@ -879,30 +1111,15 @@ def render_calendar_html(calendar_events, empty_message="No events scheduled."):
     """ for ev in calendar_events)
 
 
-def render_property_list(listings, is_multifamily=False):
-    trimmed = (listings or [])[:10]
-    return "".join(f"""
-        <li class="list-item">
-            <div class="row-between">
-                <strong>{link_tag(r.get('url'), esc(r.get('address')), r.get('url_verified', True))}</strong>
-                <span class="price">{esc(r.get('price'))}</span>
-            </div>
-            <div class="meta-line">
-                <span class="badge deal-badge">{esc(r.get('listing_status'))}</span>
-                <span class="badge">{esc(r.get('strategy'))}</span>
-                <span class="badge">{esc(estimate_monthly_cash_flow(r, is_multifamily=is_multifamily))}</span>
-            </div>
-            <p>{esc(r.get('metrics_pitch'))}</p>
-        </li>
-    """ for r in trimmed)
-
-
-def render_top_cash_flow_list(ranked_items):
-    if not ranked_items:
-        return '<li class="list-item"><span class="meta">No cash flow estimates available.</span></li>'
+def render_ranked_property_list(ranked_listings, empty_message="No properties available."):
+    trimmed = (ranked_listings or [])[:10]
+    if not trimmed:
+        return f'<li class="list-item"><span class="meta">{esc(empty_message)}</span></li>'
     rows = []
-    for idx, entry in enumerate(ranked_items[:10], start=1):
-        r = entry["listing"]
+    for idx, r in enumerate(trimmed, start=1):
+        cf_label = r.get("_cash_flow_label")
+        if not cf_label:
+            _, cf_label = estimate_monthly_cash_flow_details(r)
         rows.append(f"""
         <li class="list-item">
             <div class="row-between">
@@ -910,9 +1127,8 @@ def render_top_cash_flow_list(ranked_items):
                 <span class="price">{esc(r.get('price'))}</span>
             </div>
             <div class="meta-line">
-                <span class="badge deal-badge">{esc(entry.get('property_type'))}</span>
-                <span class="badge">{esc(entry.get('strategy'))}</span>
-                <span class="badge">{esc(entry.get('cash_flow_label'))}</span>
+                <span class="badge">{esc(r.get('strategy'))}</span>
+                <span class="badge">{esc(cf_label)}</span>
             </div>
             <p>{esc(r.get('metrics_pitch'))}</p>
         </li>
@@ -932,7 +1148,10 @@ def render_event_list(events):
     """ for e in trimmed)
 
 
-def render_news_list(items):
+def render_news_list(items, empty_message="No stories from the past 24 hours."):
+    trimmed = list(items or [])
+    if not trimmed:
+        return f'<li class="list-item news-row"><span class="meta">{esc(empty_message)}</span></li>'
     return "".join(f"""
         <li class="list-item news-row">
             <details class="news-item">
@@ -945,11 +1164,11 @@ def render_news_list(items):
                 <p class="news-lead">{esc(n.get('summary'))}</p>
             </details>
         </li>
-    """ for n in (items or []))
+    """ for n in trimmed)
 
 
 def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
-    now_et = datetime.now(ZoneInfo("America/New_York")).strftime("%A, %B %d, %Y at %I:%M %p %Z")
+    now_et = get_et_now().strftime("%A, %B %d, %Y at %I:%M %p %Z")
     _, current_month, next_month = get_month_labels()
 
     today_calendar_html = render_calendar_html(
@@ -979,15 +1198,22 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
         </li>
     """ for s in data.get("sports", []))
 
-    sports_news_html = render_news_list(data.get("sports_news", []))
-    sfh_list = (data.get("single_family_homes") or [])[:10]
-    mfh_list = (data.get("multifamily_homes") or [])[:10]
-    top_10_cash_flow = rank_top_cash_flow_properties(sfh_list, mfh_list, top_n=10)
-    top_cf_html = render_top_cash_flow_list(top_10_cash_flow)
-    sfh_html = render_property_list(sfh_list, is_multifamily=False)
-    mfh_html = render_property_list(mfh_list, is_multifamily=True)
-    local_html = render_news_list(data.get("local_news", []))
-    national_html = render_news_list(data.get("national_news", []))
+    sports_news_html = render_news_list(
+        data.get("sports_news", []),
+        empty_message="No ESPN sports stories from the past 24 hours.",
+    )
+    top_10_sfh = rank_top_cash_flow_by_type(data.get("single_family_homes"), is_multifamily=False, top_n=10)
+    top_10_mfh = rank_top_cash_flow_by_type(data.get("multifamily_homes"), is_multifamily=True, top_n=10)
+    sfh_html = render_ranked_property_list(top_10_sfh, empty_message="No single-family cash flow listings available.")
+    mfh_html = render_ranked_property_list(top_10_mfh, empty_message="No multifamily cash flow listings available.")
+    local_html = render_news_list(
+        data.get("local_news", []),
+        empty_message="No local stories from the past 24 hours.",
+    )
+    national_html = render_news_list(
+        data.get("national_news", []),
+        empty_message="No national stories from the past 24 hours.",
+    )
 
     q = data.get("quote", {})
 
@@ -1167,10 +1393,6 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             border-radius: 999px;
             margin-right: 4px;
         }}
-        .deal-badge {{
-            background: #2c313c;
-            color: var(--text);
-        }}
         .search-tag {{
             font-size: 0.75rem;
             color: var(--muted);
@@ -1219,13 +1441,10 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
         <ul class="item-list">{national_html}</ul>
 
         <h2>45140 Area Investment Real Estate</h2>
-        <h3 class="subsection">Top 10 Cash-Flowing Properties (Ranked by Monthly Cash Flow)</h3>
-        <ul class="item-list">{top_cf_html}</ul>
-
-        <h3 class="subsection">Single-Family Homes (10 Listings &bull; Max $500,000 &bull; New &amp; Value Deals)</h3>
+        <h3 class="subsection">Top 10 Cash-Flowing Single-Family Homes (Max $500,000)</h3>
         <ul class="item-list">{sfh_html}</ul>
 
-        <h3 class="subsection">Multifamily Properties (10 Listings &bull; Max $1,500,000 &bull; New &amp; Value Deals)</h3>
+        <h3 class="subsection">Top 10 Cash-Flowing Multifamily Properties (Max $1,500,000)</h3>
         <ul class="item-list">{mfh_html}</ul>
 
         <h2>Top 20 Events Near 45140</h2>
@@ -1256,6 +1475,7 @@ def build_fallback_html(
             {
                 "headline": "Digest status notice",
                 "source": "Paul's Daily Brief",
+                "published_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "summary": note,
                 "url": "[https://www.google.com/search?q=Loveland+OH+local+news](https://www.google.com/search?q=Loveland+OH+local+news)",
                 "url_verified": False,
@@ -1306,19 +1526,23 @@ def ensure_index_html_exists(
 
 
 if __name__ == "__main__":
-    today_calendar = [
-        {"summary": "Paul Work Holiday", "time_label": "All Day (Nov 26–27)"},
-        {"summary": "Marketplace pickup slack line $15", "time_label": "12:00 PM – 12:30 PM EST"},
-        {"summary": "Eli no school", "time_label": "All Day (Nov 23–27)"},
-        {"summary": "Lauren Thanksgiving break", "time_label": "All Day (Nov 25–27)"},
-        {"summary": "Isaac/Tracy-Vegas", "time_label": "All Day (Nov 27–Dec 1)"},
-        {"summary": "Isaac", "time_label": "Ongoing through 2:00 PM EST"},
-        {"summary": "Sarah", "time_label": "2:00 PM EST – Nov 30, 2:00 PM EST"},
+    today_date = get_et_now().date()
+    tomorrow_date = today_date + timedelta(days=1)
+
+    sample_dated_events = [
+        {"start_date": "2026-11-26", "end_date": "2026-11-27", "summary": "Paul Work Holiday", "time_label": "All Day (Nov 26–27)"},
+        {"start_date": "2026-11-26", "end_date": "2026-11-26", "summary": "Marketplace pickup slack line $15", "time_label": "12:00 PM – 12:30 PM EST"},
+        {"start_date": "2026-11-23", "end_date": "2026-11-27", "summary": "Eli no school", "time_label": "All Day (Nov 23–27)"},
+        {"start_date": "2026-11-25", "end_date": "2026-11-27", "summary": "Lauren Thanksgiving break", "time_label": "All Day (Nov 25–27)"},
+        {"start_date": "2026-11-27", "end_date": "2026-12-01", "summary": "Isaac/Tracy-Vegas", "time_label": "All Day (Nov 27–Dec 1)"},
+        {"start_date": "2026-11-26", "end_date": "2026-11-26", "summary": "Isaac", "time_label": "Ongoing through 2:00 PM EST"},
+        {"start_date": "2026-11-26", "end_date": "2026-11-30", "summary": "Sarah", "time_label": "2:00 PM EST – Nov 30, 2:00 PM EST"},
+        {"start_date": "2026-11-27", "end_date": "2026-11-27", "summary": "Eli lifeguard certification", "time_label": "9:00 AM – 4:00 PM EST"},
+        {"start_date": "2026-11-27", "end_date": "2026-11-27", "summary": "Thanksgiving @ Pfarr", "time_label": "5:00 PM – 8:00 PM EST"},
     ]
-    tomorrow_calendar = [
-        {"summary": "Eli lifeguard certification", "time_label": "9:00 AM – 4:00 PM EST"},
-        {"summary": "Thanksgiving @ Pfarr", "time_label": "5:00 PM – 8:00 PM EST"},
-    ]
+
+    today_calendar = get_calendar_events_for_day(today_date, sample_dated_events)
+    tomorrow_calendar = get_calendar_events_for_day(tomorrow_date, sample_dated_events)
 
     output_path = "index.html"
     existed_before = ensure_index_html_exists(
