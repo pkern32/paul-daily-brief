@@ -178,6 +178,36 @@ def filter_recent_news(items, max_items=5, require_timestamp=True):
     return recent
 
 
+def normalize_7day_weather(raw_days):
+    normalized = []
+    for entry in (raw_days or [])[:7]:
+        if not isinstance(entry, dict):
+            continue
+        day_label = str(entry.get("day") or entry.get("forecast_day") or "").strip()
+        hi_temp = str(entry.get("high_temp") or entry.get("high") or "").strip()
+        low_temp = str(entry.get("low_temp") or entry.get("low") or "").strip()
+        precip = str(entry.get("precip_chance") or entry.get("precipitation_chance") or "").strip()
+        if precip and not precip.endswith("%"):
+            precip = f"{precip}%"
+        if day_label and hi_temp and low_temp and precip:
+            normalized.append({
+                "day": day_label,
+                "high_temp": hi_temp,
+                "low_temp": low_temp,
+                "precip_chance": precip,
+            })
+    return normalized[:7]
+
+
+def get_7day_weather_forecast(digest_data=None, sample_weather_7day=None):
+    from_digest = normalize_7day_weather((digest_data or {}).get("weather_7day"))
+    if len(from_digest) == 7:
+        return from_digest
+    if sample_weather_7day:
+        return normalize_7day_weather(sample_weather_7day)
+    return from_digest
+
+
 def parse_ical_dt(raw_val, tz_name="America/New_York"):
     val = str(raw_val or "").strip()
     local_tz = ZoneInfo(tz_name)
@@ -195,7 +225,23 @@ def parse_ical_dt(raw_val, tz_name="America/New_York"):
     return None, None, False
 
 
-def fetch_ical_events_for_target_date(ical_url, target_date):
+def is_birthday_summary(summary):
+    text = str(summary or "").lower()
+    return bool(re.search(r"\bbirthday\b|\bbday\b", text))
+
+
+def next_annual_occurrence(month, day, ref_date):
+    for year in (ref_date.year, ref_date.year + 1):
+        try:
+            candidate = date(year, month, day)
+        except ValueError:
+            candidate = date(year, 2, 28)
+        if candidate >= ref_date:
+            return candidate
+    return date(ref_date.year + 1, month, min(day, 28))
+
+
+def fetch_ical_all_events(ical_url):
     if not ical_url:
         return []
     try:
@@ -207,12 +253,13 @@ def fetch_ical_events_for_target_date(ical_url, target_date):
 
     unfolded = re.sub(r"\r?\n[ \t]", "", resp.text)
     blocks = re.findall(r"BEGIN:VEVENT(.*?)END:VEVENT", unfolded, flags=re.S)
-    events = []
+    parsed_events = []
 
     for block in blocks:
         summary_m = re.search(r"^SUMMARY[^:]*:(.*)$", block, flags=re.M)
         dtstart_m = re.search(r"^DTSTART([^:]*):(.*)$", block, flags=re.M)
         dtend_m = re.search(r"^DTEND([^:]*):(.*)$", block, flags=re.M)
+        rrule_m = re.search(r"^RRULE[^:]*:(.*)$", block, flags=re.M)
         if not summary_m or not dtstart_m:
             continue
 
@@ -232,32 +279,53 @@ def fetch_ical_events_for_target_date(ical_url, target_date):
                 else:
                     end_date = parsed_end_date
 
-        if start_date <= target_date <= end_date:
-            if is_all_day:
-                if start_date == end_date:
-                    time_label = f"All Day ({start_date.strftime('%b %d')})"
-                else:
-                    time_label = f"All Day ({start_date.strftime('%b %d')}–{end_date.strftime('%b %d')})"
-            else:
-                start_str = start_obj.strftime("%I:%M %p %Z").lstrip("0")
-                if end_obj and end_obj.date() == start_date:
-                    end_str = end_obj.strftime("%I:%M %p %Z").lstrip("0")
-                    time_label = f"{start_str} – {end_str}"
-                elif end_obj:
-                    end_str = end_obj.strftime("%b %d, %I:%M %p %Z")
-                    time_label = f"{start_str} – {end_str}"
-                else:
-                    time_label = start_str
+        parsed_events.append({
+            "summary": summary,
+            "start_date": start_date,
+            "end_date": end_date,
+            "start_obj": start_obj,
+            "end_obj": end_obj,
+            "is_all_day": is_all_day,
+            "rrule": rrule_m.group(1).strip().upper() if rrule_m else "",
+        })
 
-            events.append({"summary": summary, "time_label": time_label})
+    return parsed_events
 
-    return events
+
+def format_event_time_label(ev):
+    if ev.get("time_label"):
+        return str(ev["time_label"])
+    start_date = ev["start_date"]
+    end_date = ev["end_date"]
+    start_obj = ev.get("start_obj")
+    end_obj = ev.get("end_obj")
+    if ev.get("is_all_day"):
+        if start_date == end_date:
+            return f"All Day ({start_date.strftime('%b %d')})"
+        return f"All Day ({start_date.strftime('%b %d')}–{end_date.strftime('%b %d')})"
+    if start_obj:
+        start_str = start_obj.strftime("%I:%M %p %Z").lstrip("0")
+        if end_obj and end_obj.date() == start_date:
+            end_str = end_obj.strftime("%I:%M %p %Z").lstrip("0")
+            return f"{start_str} – {end_str}"
+        if end_obj:
+            end_str = end_obj.strftime("%b %d, %I:%M %p %Z")
+            return f"{start_str} – {end_str}"
+        return start_str
+    return start_date.strftime("%b %d, %Y")
 
 
 def get_calendar_events_for_day(target_date, sample_dated_events=None):
     ical_url = os.environ.get("ICAL_URL", "").strip()
     if ical_url:
-        return fetch_ical_events_for_target_date(ical_url, target_date)
+        matched = []
+        for ev in fetch_ical_all_events(ical_url):
+            if ev["start_date"] <= target_date <= ev["end_date"]:
+                matched.append({
+                    "summary": ev["summary"],
+                    "time_label": format_event_time_label(ev),
+                })
+        return matched
 
     matched = []
     for item in (sample_dated_events or []):
@@ -273,6 +341,62 @@ def get_calendar_events_for_day(target_date, sample_dated_events=None):
                 "time_label": item.get("time_label", ""),
             })
     return matched
+
+
+def get_upcoming_birthdays(target_date, sample_dated_events=None, count=2):
+    ical_url = os.environ.get("ICAL_URL", "").strip()
+    candidates = []
+
+    if ical_url:
+        for ev in fetch_ical_all_events(ical_url):
+            summary = ev.get("summary", "")
+            if not is_birthday_summary(summary):
+                continue
+            start_d = ev["start_date"]
+            is_recurring = "FREQ=YEARLY" in ev.get("rrule", "")
+            if is_recurring or start_d < target_date:
+                occ_date = next_annual_occurrence(start_d.month, start_d.day, target_date)
+            else:
+                occ_date = start_d
+            if occ_date >= target_date:
+                candidates.append({
+                    "summary": summary,
+                    "date": occ_date,
+                    "date_label": occ_date.strftime("%b %d, %Y"),
+                })
+    else:
+        for item in (sample_dated_events or []):
+            summary = item.get("summary", "")
+            if not is_birthday_summary(summary):
+                continue
+            start_d = item.get("start_date")
+            if isinstance(start_d, str):
+                start_d = date.fromisoformat(start_d)
+            if not start_d:
+                continue
+            is_recurring = bool(item.get("recurring", True))
+            if is_recurring or start_d < target_date:
+                occ_date = next_annual_occurrence(start_d.month, start_d.day, target_date)
+            else:
+                occ_date = start_d
+            if occ_date >= target_date:
+                candidates.append({
+                    "summary": summary,
+                    "date": occ_date,
+                    "date_label": occ_date.strftime("%b %d, %Y"),
+                })
+
+    candidates.sort(key=lambda x: (x["date"], x["summary"].lower()))
+    deduped = []
+    seen = set()
+    for c in candidates:
+        key = (c["date"], c["summary"].lower())
+        if key not in seen:
+            seen.add(key)
+            deduped.append(c)
+        if len(deduped) >= count:
+            break
+    return deduped
 
 
 def get_genai_client():
@@ -342,11 +466,20 @@ Use Google Search to find current, real-time information as of today.
 CRITICAL URL RULES:
 - Every URL MUST be copied verbatim from your Google Search grounding results. Never guess, construct, or shorten URLs.
 - Every URL must point directly to the specific article, box score, schedule, property listing, or event page—NEVER to a site homepage or generic section root.
+- For weather in Loveland, OH ("weather_7day"), search specifically on wunderground.com (Weather Underground) for Loveland, OH 45140.
 - For every item in "sports_news", "url" MUST be an ESPN.com URL (from www.espn.com) pointing to that specific ESPN sports story, and "source" MUST be "ESPN". Search specifically on espn.com for sports headlines published in the past 24 hours.
 - For every item in "single_family_homes" and "multifamily_homes", "url" MUST be a Zillow.com listing URL (from www.zillow.com, such as a /homedetails/ property page) found via Google Search on zillow.com. Search specifically on site:zillow.com for active listings in 45140 and nearby communities.
 
 Return ONLY valid JSON matching this exact schema (no markdown fences, no extra text):
 {{
+  "weather_7day": [
+    {{
+      "day": "Sat, Nov 28",
+      "high_temp": "52°F",
+      "low_temp": "39°F",
+      "precip_chance": "10%"
+    }}
+  ],
   "events_this_month": [
     {{
       "title": "Event Name",
@@ -442,6 +575,7 @@ Return ONLY valid JSON matching this exact schema (no markdown fences, no extra 
 }}
 
 Strict Requirements:
+0. "weather_7day": Exact 7-day daily weather forecast for Loveland, OH (ZIP 45140) from wunderground.com starting on {today_str}, with "day", "high_temp", "low_temp", and "precip_chance" for all 7 days.
 1. "events_this_month": Top 10 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in the remainder of {current_month} (on or after {today_str}) spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
 2. "events_next_month": Top 10 upcoming events near 45140 (Loveland / Greater Cincinnati) occurring in {next_month} spanning concerts, karaoke, comedy, real estate networking, Cincinnati Zoo, Newport Aquarium, local museums, and community events suited for ages 40-59.
 3. "sports": Cover ONLY these 4 Minnesota pro teams: Minnesota Twins, Minnesota Vikings, Minnesota Wild, and Minnesota Timberwolves. Include each team's single top current news headline with source and direct article URL, plus ONLY final score and top performers for the most recent completed game, an ESPN.com box score URL ("box_score_url" on espn.com), and direct team schedule URL.
@@ -926,10 +1060,23 @@ def calculate_monthly_pi(price, down_payment_pct=0.20, annual_rate=0.0721):
     return loan_amount / n_payments
 
 
-def estimate_monthly_cash_flow_details(listing, is_multifamily=False, down_payment_pct=0.20, annual_rate=0.0721):
+def compute_cash_flow_breakdown(listing, is_multifamily=False, down_payment_pct=0.20, annual_rate=0.0721):
     price = parse_price_number(listing.get("price"))
     if price <= 0:
-        return float("-inf"), "Est. Cash Flow: N/A"
+        return {
+            "cash_flow": float("-inf"),
+            "label": "Est. Cash Flow: N/A",
+            "gross_rent": 0.0,
+            "mgmt_fee": 0.0,
+            "cleaning_fee": 0.0,
+            "booking_fee": 0.0,
+            "other_opex": 0.0,
+            "monthly_insurance": 0.0,
+            "monthly_tax": 0.0,
+            "pi": 0.0,
+            "is_actual_tax": False,
+            "rent_source": "N/A",
+        }
 
     monthly_tax, is_actual_tax = estimate_monthly_tax(listing, price)
     pi = calculate_monthly_pi(price, down_payment_pct=down_payment_pct, annual_rate=annual_rate)
@@ -949,24 +1096,51 @@ def estimate_monthly_cash_flow_details(listing, is_multifamily=False, down_payme
         gross_rent, has_zillow_rent = get_zillow_ltr_rent(listing, is_multifamily=is_multifamily)
         vacancy_rate = 0.06 if is_multifamily else 0.05
         non_tax_opex_rate = 0.24 if is_multifamily else 0.22
-        effective_rent = gross_rent * (1.0 - vacancy_rate)
+        mgmt_fee = 0.0
+        cleaning_fee = 0.0
+        booking_fee = gross_rent * vacancy_rate
         other_opex = gross_rent * non_tax_opex_rate
-        cash_flow = effective_rent - monthly_tax - other_opex - pi
+        monthly_insurance = (price * STR_ANNUAL_INSURANCE_RATE) / 12.0
+        cash_flow = gross_rent - booking_fee - other_opex - monthly_insurance - monthly_tax - pi
         rent_source = "Zillow Rent Est." if has_zillow_rent else "Zillow Rent Baseline"
 
     sign = "+" if cash_flow >= 0 else "-"
     tax_label = f"Actual Tax ${round(monthly_tax):,}/mo" if is_actual_tax else f"Est. Tax ${round(monthly_tax):,}/mo"
     label = f"Est. Cash Flow: {sign}${abs(round(cash_flow)):,}/mo ({rent_source}, {tax_label})"
-    return cash_flow, label
+    return {
+        "cash_flow": cash_flow,
+        "label": label,
+        "gross_rent": gross_rent,
+        "mgmt_fee": mgmt_fee,
+        "cleaning_fee": cleaning_fee,
+        "booking_fee": booking_fee,
+        "other_opex": other_opex,
+        "monthly_insurance": monthly_insurance,
+        "monthly_tax": monthly_tax,
+        "pi": pi,
+        "is_actual_tax": is_actual_tax,
+        "rent_source": rent_source,
+    }
+
+
+def estimate_monthly_cash_flow_details(listing, is_multifamily=False, down_payment_pct=0.20, annual_rate=0.0721):
+    bd = compute_cash_flow_breakdown(
+        listing,
+        is_multifamily=is_multifamily,
+        down_payment_pct=down_payment_pct,
+        annual_rate=annual_rate,
+    )
+    return bd["cash_flow"], bd["label"]
 
 
 def rank_top_cash_flow_by_type(listings, is_multifamily=False, top_n=10):
     ranked = []
     for item in (listings or []):
-        cf_val, cf_label = estimate_monthly_cash_flow_details(item, is_multifamily=is_multifamily)
+        bd = compute_cash_flow_breakdown(item, is_multifamily=is_multifamily)
         enriched = dict(item)
-        enriched["_cash_flow_value"] = cf_val
-        enriched["_cash_flow_label"] = cf_label
+        enriched["_cash_flow_value"] = bd["cash_flow"]
+        enriched["_cash_flow_label"] = bd["label"]
+        enriched["_breakdown"] = bd
         ranked.append(enriched)
 
     ranked.sort(key=lambda x: x["_cash_flow_value"], reverse=True)
@@ -1100,6 +1274,18 @@ def team_logo_tag(team_name):
     )
 
 
+def render_7day_weather_html(weather_days, empty_message="7-day forecast unavailable."):
+    trimmed = normalize_7day_weather(weather_days)
+    if not trimmed:
+        return f'<li class="list-item calendar-item"><span class="meta">{esc(empty_message)}</span></li>'
+    return "".join(f"""
+        <li class="list-item calendar-item">
+            <span class="cal-title">{esc(d.get('day'))}</span>
+            <span class="badge cal-time">Hi {esc(d.get('high_temp'))} &bull; Lo {esc(d.get('low_temp'))} &bull; Precip {esc(d.get('precip_chance'))}</span>
+        </li>
+    """ for d in trimmed)
+
+
 def render_calendar_html(calendar_events, empty_message="No events scheduled."):
     if not calendar_events:
         return f'<li class="list-item calendar-item"><span class="meta">{esc(empty_message)}</span></li>'
@@ -1111,24 +1297,94 @@ def render_calendar_html(calendar_events, empty_message="No events scheduled."):
     """ for ev in calendar_events)
 
 
-def render_ranked_property_list(ranked_listings, empty_message="No properties available."):
+def render_upcoming_birthdays_html(birthdays, empty_message="No upcoming birthdays found on calendar."):
+    trimmed = (birthdays or [])[:2]
+    if not trimmed:
+        return f'<li class="list-item calendar-item"><span class="meta">{esc(empty_message)}</span></li>'
+    return "".join(f"""
+        <li class="list-item calendar-item">
+            <span class="cal-title">{esc(b.get('summary'))}</span>
+            <span class="badge cal-time">{esc(b.get('date_label'))}</span>
+        </li>
+    """ for b in trimmed)
+
+
+def render_ranked_property_list(ranked_listings, is_multifamily=False, empty_message="No properties available."):
     trimmed = (ranked_listings or [])[:10]
     if not trimmed:
         return f'<li class="list-item"><span class="meta">{esc(empty_message)}</span></li>'
     rows = []
     for idx, r in enumerate(trimmed, start=1):
-        cf_label = r.get("_cash_flow_label")
-        if not cf_label:
-            _, cf_label = estimate_monthly_cash_flow_details(r)
+        bd = r.get("_breakdown")
+        if not bd:
+            bd = compute_cash_flow_breakdown(r, is_multifamily=is_multifamily)
+        cf_label = r.get("_cash_flow_label") or bd["label"]
+        gross_r = round(bd["gross_rent"])
+        mgmt_r = round(bd["mgmt_fee"])
+        clean_r = round(bd["cleaning_fee"])
+        book_r = round(bd["booking_fee"])
+        other_r = round(bd["other_opex"])
+        ins_r = round(bd["monthly_insurance"])
+        tax_r = round(bd["monthly_tax"])
+        pi_r = round(bd["pi"])
+        net_r = round(bd["cash_flow"]) if bd["cash_flow"] != float("-inf") else 0
+        net_sign = "+" if net_r >= 0 else "-"
+        net_formatted = f"{net_sign}${abs(net_r):,}/mo"
+
         rows.append(f"""
-        <li class="list-item">
+        <li class="list-item property-item" data-cf-card>
             <div class="row-between">
                 <strong>#{idx} &bull; {link_tag(r.get('url'), esc(r.get('address')), r.get('url_verified', True))}</strong>
                 <span class="price">{esc(r.get('price'))}</span>
             </div>
-            <div class="meta-line">
-                <span class="badge">{esc(r.get('strategy'))}</span>
-                <span class="badge">{esc(cf_label)}</span>
+            <div class="meta-line property-summary-row">
+                <details class="cf-details">
+                    <summary class="cf-summary">
+                        <span class="cf-triangle" aria-hidden="true">▸</span>
+                        <span class="badge">{esc(r.get('strategy'))}</span>
+                        <span class="badge cf-badge" data-cf-badge>{esc(cf_label)}</span>
+                    </summary>
+                    <div class="cf-editor" data-cf-editor>
+                        <div class="cf-grid">
+                            <label class="cf-field">
+                                <span>Gross Monthly Rent ($)</span>
+                                <input type="number" step="25" min="0" value="{gross_r}" data-cf-input="gross_rent">
+                            </label>
+                            <label class="cf-field">
+                                <span>Property Mgmt ($/mo)</span>
+                                <input type="number" step="10" min="0" value="{mgmt_r}" data-cf-input="mgmt_fee">
+                            </label>
+                            <label class="cf-field">
+                                <span>Cleaning Fees ($/mo)</span>
+                                <input type="number" step="10" min="0" value="{clean_r}" data-cf-input="cleaning_fee">
+                            </label>
+                            <label class="cf-field">
+                                <span>Booking Fees ($/mo)</span>
+                                <input type="number" step="10" min="0" value="{book_r}" data-cf-input="booking_fee">
+                            </label>
+                            <label class="cf-field">
+                                <span>Other Expenses ($/mo)</span>
+                                <input type="number" step="10" min="0" value="{other_r}" data-cf-input="other_opex">
+                            </label>
+                            <label class="cf-field">
+                                <span>Insurance ($/mo)</span>
+                                <input type="number" step="5" min="0" value="{ins_r}" data-cf-input="monthly_insurance">
+                            </label>
+                            <label class="cf-field">
+                                <span>Property Tax ($/mo)</span>
+                                <input type="number" step="10" min="0" value="{tax_r}" data-cf-input="monthly_tax">
+                            </label>
+                            <label class="cf-field">
+                                <span>Mortgage P&amp;I ($/mo)</span>
+                                <input type="number" step="10" min="0" value="{pi_r}" data-cf-input="pi">
+                            </label>
+                        </div>
+                        <div class="cf-footer">
+                            <span class="cf-net-readout">Calculated Monthly Cash Flow: <strong data-cf-net>{esc(net_formatted)}</strong></span>
+                            <button type="button" class="cf-reset-btn" data-cf-reset>Reset Defaults</button>
+                        </div>
+                    </div>
+                </details>
             </div>
             <p>{esc(r.get('metrics_pitch'))}</p>
         </li>
@@ -1167,10 +1423,18 @@ def render_news_list(items, empty_message="No stories from the past 24 hours."):
     """ for n in trimmed)
 
 
-def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
+def build_html(
+    data,
+    today_calendar_events=None,
+    tomorrow_calendar_events=None,
+    upcoming_birthdays=None,
+    weather_7day=None,
+):
     now_et = get_et_now().strftime("%A, %B %d, %Y at %I:%M %p %Z")
     _, current_month, next_month = get_month_labels()
 
+    resolved_weather = get_7day_weather_forecast(data, sample_weather_7day=weather_7day)
+    weather_7day_html = render_7day_weather_html(resolved_weather)
     today_calendar_html = render_calendar_html(
         today_calendar_events or [],
         empty_message="No events scheduled for today.",
@@ -1179,6 +1443,7 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
         tomorrow_calendar_events or [],
         empty_message="No events scheduled for tomorrow.",
     )
+    upcoming_birthdays_html = render_upcoming_birthdays_html(upcoming_birthdays or [])
     events_this_html = render_event_list(data.get("events_this_month", []))
     events_next_html = render_event_list(data.get("events_next_month", []))
 
@@ -1204,8 +1469,8 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
     )
     top_10_sfh = rank_top_cash_flow_by_type(data.get("single_family_homes"), is_multifamily=False, top_n=10)
     top_10_mfh = rank_top_cash_flow_by_type(data.get("multifamily_homes"), is_multifamily=True, top_n=10)
-    sfh_html = render_ranked_property_list(top_10_sfh, empty_message="No single-family cash flow listings available.")
-    mfh_html = render_ranked_property_list(top_10_mfh, empty_message="No multifamily cash flow listings available.")
+    sfh_html = render_ranked_property_list(top_10_sfh, is_multifamily=False, empty_message="No single-family cash flow listings available.")
+    mfh_html = render_ranked_property_list(top_10_mfh, is_multifamily=True, empty_message="No multifamily cash flow listings available.")
     local_html = render_news_list(
         data.get("local_news", []),
         empty_message="No local stories from the past 24 hours.",
@@ -1371,7 +1636,82 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             flex-shrink: 0;
             display: block;
         }}
-        .meta-line {{ margin-top: 6px; }}
+        .meta-line {{ margin-top: 8px; }}
+        details.cf-details {{ margin: 0; }}
+        summary.cf-summary {{
+            list-style: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }}
+        summary.cf-summary::-webkit-details-marker {{ display: none; }}
+        .cf-triangle {{
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1;
+            display: inline-block;
+            transition: transform 0.15s ease;
+        }}
+        details.cf-details[open] > summary.cf-summary .cf-triangle {{
+            transform: rotate(90deg);
+            color: var(--text);
+        }}
+        .cf-editor {{
+            margin-top: 10px;
+            padding: 12px;
+            background: #121419;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }}
+        .cf-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+            gap: 10px;
+        }}
+        .cf-field {{
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }}
+        .cf-field input {{
+            background: #1c1f27;
+            color: var(--text);
+            border: 1px solid #373c47;
+            border-radius: 4px;
+            padding: 5px 8px;
+            font-size: 0.88rem;
+        }}
+        .cf-field input:focus {{
+            outline: none;
+            border-color: #60a5fa;
+        }}
+        .cf-footer {{
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 0.88rem;
+        }}
+        .cf-reset-btn {{
+            background: #22262f;
+            color: var(--text);
+            border: 1px solid #373c47;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 0.78rem;
+            cursor: pointer;
+        }}
+        .cf-reset-btn:hover {{
+            background: #2d323e;
+        }}
         .team-headline {{
             background: #1f222a;
             border: 1px solid #373c47;
@@ -1417,6 +1757,9 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
             <cite>&mdash; {link_tag(q.get('source_url'), esc(q.get('author')), q.get('url_verified', True))}</cite>
         </section>
 
+        <h2>7-Day Weather (Loveland, OH &bull; Weather Underground)</h2>
+        <ul class="item-list">{weather_7day_html}</ul>
+
         <div class="calendar-grid">
             <div>
                 <h2>Today's Calendar</h2>
@@ -1427,6 +1770,9 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
                 <ul class="item-list">{tomorrow_calendar_html}</ul>
             </div>
         </div>
+
+        <h2>Upcoming Birthdays</h2>
+        <ul class="item-list">{upcoming_birthdays_html}</ul>
 
         <h2>Minnesota Pro Sports</h2>
         <ul class="item-list">{sports_html}</ul>
@@ -1454,6 +1800,86 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
         <h3 class="subsection">Next Month ({esc(next_month)})</h3>
         <ul class="item-list">{events_next_html}</ul>
     </div>
+    <script>
+        (function() {{
+            function readNum(inputEl) {{
+                const parsed = parseFloat(inputEl.value);
+                return Number.isFinite(parsed) ? parsed : 0;
+            }}
+
+            function formatMonthlyCashFlow(val) {{
+                const rounded = Math.round(val);
+                const sign = rounded >= 0 ? "+" : "-";
+                return `${{sign}}$${{Math.abs(rounded).toLocaleString("en-US")}}/mo`;
+            }}
+
+            document.querySelectorAll("[data-cf-card]").forEach((card) => {{
+                const inputs = Array.from(card.querySelectorAll("[data-cf-input]"));
+                const netEl = card.querySelector("[data-cf-net]");
+                const badgeEl = card.querySelector("[data-cf-badge]");
+                const resetBtn = card.querySelector("[data-cf-reset]");
+
+                inputs.forEach((inp) => {{
+                    inp.dataset.defaultVal = inp.value;
+                }});
+
+                const originalBadgeText = badgeEl ? badgeEl.textContent : "";
+
+                function recalculate() {{
+                    const map = {{}};
+                    inputs.forEach((inp) => {{
+                        map[inp.dataset.cfInput] = readNum(inp);
+                    }});
+                    const grossRent = map.gross_rent || 0;
+                    const expenses =
+                        (map.mgmt_fee || 0) +
+                        (map.cleaning_fee || 0) +
+                        (map.booking_fee || 0) +
+                        (map.other_opex || 0) +
+                        (map.monthly_insurance || 0) +
+                        (map.monthly_tax || 0) +
+                        (map.pi || 0);
+                    const netCf = grossRent - expenses;
+                    const formatted = formatMonthlyCashFlow(netCf);
+                    if (netEl) {{
+                        netEl.textContent = formatted;
+                    }}
+                    if (badgeEl) {{
+                        const taxRounded = Math.round(map.monthly_tax || 0).toLocaleString("en-US");
+                        badgeEl.textContent = `Est. Cash Flow: ${{formatted}} (Custom/Edited, Tax $${{taxRounded}}/mo)`;
+                    }}
+                }}
+
+                inputs.forEach((inp) => {{
+                    inp.addEventListener("input", recalculate);
+                    inp.addEventListener("change", recalculate);
+                }});
+
+                if (resetBtn) {{
+                    resetBtn.addEventListener("click", () => {{
+                        inputs.forEach((inp) => {{
+                            inp.value = inp.dataset.defaultVal;
+                        }});
+                        if (badgeEl && originalBadgeText) {{
+                            badgeEl.textContent = originalBadgeText;
+                        }}
+                        const initialNet = readNum(card.querySelector('[data-cf-input="gross_rent"]')) - (
+                            readNum(card.querySelector('[data-cf-input="mgmt_fee"]')) +
+                            readNum(card.querySelector('[data-cf-input="cleaning_fee"]')) +
+                            readNum(card.querySelector('[data-cf-input="booking_fee"]')) +
+                            readNum(card.querySelector('[data-cf-input="other_opex"]')) +
+                            readNum(card.querySelector('[data-cf-input="monthly_insurance"]')) +
+                            readNum(card.querySelector('[data-cf-input="monthly_tax"]')) +
+                            readNum(card.querySelector('[data-cf-input="pi"]'))
+                        );
+                        if (netEl) {{
+                            netEl.textContent = formatMonthlyCashFlow(initialNet);
+                        }}
+                    }});
+                }}
+            }});
+        }})();
+    </script>
 </body>
 </html>
 """
@@ -1462,9 +1888,12 @@ def build_html(data, today_calendar_events=None, tomorrow_calendar_events=None):
 def build_fallback_html(
     today_calendar_events=None,
     tomorrow_calendar_events=None,
+    upcoming_birthdays=None,
+    weather_7day=None,
     note="Awaiting next scheduled digest refresh.",
 ):
     fallback_data = {
+        "weather_7day": normalize_7day_weather(weather_7day),
         "events_this_month": [],
         "events_next_month": [],
         "sports": [],
@@ -1493,6 +1922,8 @@ def build_fallback_html(
         fallback_data,
         today_calendar_events=today_calendar_events,
         tomorrow_calendar_events=tomorrow_calendar_events,
+        upcoming_birthdays=upcoming_birthdays,
+        weather_7day=weather_7day,
     )
 
 
@@ -1508,6 +1939,8 @@ def ensure_index_html_exists(
     path="index.html",
     today_calendar_events=None,
     tomorrow_calendar_events=None,
+    upcoming_birthdays=None,
+    weather_7day=None,
 ):
     file_exists = os.path.isfile(path)
     has_content = file_exists and os.path.getsize(path) > 0
@@ -1517,6 +1950,8 @@ def ensure_index_html_exists(
         fallback_html = build_fallback_html(
             today_calendar_events=today_calendar_events,
             tomorrow_calendar_events=tomorrow_calendar_events,
+            upcoming_birthdays=upcoming_birthdays,
+            weather_7day=weather_7day,
             note="Initial page created automatically because index.html was missing. Will populate with live digest data.",
         )
         write_html_file(path, fallback_html)
@@ -1528,6 +1963,16 @@ def ensure_index_html_exists(
 if __name__ == "__main__":
     today_date = get_et_now().date()
     tomorrow_date = today_date + timedelta(days=1)
+
+    sample_weather_7day = [
+        {"day": "Saturday, Nov 28", "high_temp": "52°F", "low_temp": "39°F", "precip_chance": "10%"},
+        {"day": "Sunday, Nov 29", "high_temp": "52°F", "low_temp": "35°F", "precip_chance": "80%"},
+        {"day": "Monday, Nov 30", "high_temp": "43°F", "low_temp": "29°F", "precip_chance": "10%"},
+        {"day": "Tuesday, Dec 1", "high_temp": "49°F", "low_temp": "33°F", "precip_chance": "15%"},
+        {"day": "Wednesday, Dec 2", "high_temp": "54°F", "low_temp": "38°F", "precip_chance": "10%"},
+        {"day": "Thursday, Dec 3", "high_temp": "60°F", "low_temp": "44°F", "precip_chance": "50%"},
+        {"day": "Friday, Dec 4", "high_temp": "56°F", "low_temp": "39°F", "precip_chance": "15%"},
+    ]
 
     sample_dated_events = [
         {"start_date": "2026-11-26", "end_date": "2026-11-27", "summary": "Paul Work Holiday", "time_label": "All Day (Nov 26–27)"},
@@ -1543,12 +1988,15 @@ if __name__ == "__main__":
 
     today_calendar = get_calendar_events_for_day(today_date, sample_dated_events)
     tomorrow_calendar = get_calendar_events_for_day(tomorrow_date, sample_dated_events)
+    upcoming_birthdays = get_upcoming_birthdays(today_date, sample_dated_events, count=2)
 
     output_path = "index.html"
     existed_before = ensure_index_html_exists(
         output_path,
         today_calendar_events=today_calendar,
         tomorrow_calendar_events=tomorrow_calendar,
+        upcoming_birthdays=upcoming_birthdays,
+        weather_7day=sample_weather_7day,
     )
 
     try:
@@ -1557,6 +2005,8 @@ if __name__ == "__main__":
             digest_data,
             today_calendar_events=today_calendar,
             tomorrow_calendar_events=tomorrow_calendar,
+            upcoming_birthdays=upcoming_birthdays,
+            weather_7day=sample_weather_7day,
         )
         write_html_file(output_path, html_output)
         print("Successfully generated index.html")
@@ -1566,6 +2016,8 @@ if __name__ == "__main__":
             fallback_html = build_fallback_html(
                 today_calendar_events=today_calendar,
                 tomorrow_calendar_events=tomorrow_calendar,
+                upcoming_birthdays=upcoming_birthdays,
+                weather_7day=sample_weather_7day,
                 note=f"Live fetch failed ({exc}); keeping fallback page until next run.",
             )
             write_html_file(output_path, fallback_html)
